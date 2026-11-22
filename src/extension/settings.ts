@@ -3,7 +3,7 @@ import { clampSetting, defaultSettings, type AppSettings, type FlatSettingsPatch
 
 const UI_DENSITY_VALUES: readonly UiDensity[] = ['compact', 'cozy', 'comfortable'];
 
-const CONFIG_ROOT = 'dddbml';
+const CONFIG_ROOT = 'dbml-extension';
 
 export function loadSettings(): AppSettings {
   const cfg = vscode.workspace.getConfiguration(CONFIG_ROOT);
@@ -49,7 +49,7 @@ export async function applySettingsPatch(patch: Partial<FlatSettingsPatch>): Pro
       await cfg.update(key, value, target);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      void vscode.window.showWarningMessage(`dddbml: could not update setting "${key}" — ${message}`);
+      void vscode.window.showWarningMessage(`DBML Extension: could not update setting "${key}" — ${message}`);
     }
   }
 }

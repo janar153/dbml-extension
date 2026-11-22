@@ -27,11 +27,11 @@ export interface SidecarConflict {
 export async function detectSidecarConflict(dbmlUri: vscode.Uri): Promise<SidecarConflict> {
   const sidecar = sidecarUri(dbmlUri);
   const repoRoot = await getRepoRoot(sidecar.fsPath);
-  if (!repoRoot) throw new Error('dddbml: layout conflict but no git repository found');
+  if (!repoRoot) throw new Error('DBML Extension: layout conflict but no git repository found');
   const relpath = toRepoRelative(repoRoot, sidecar.fsPath);
 
   const stages = await getUnmergedStages(repoRoot, relpath);
-  if (stages.size === 0) throw new Error('dddbml: layout file is not in a git-unmerged state');
+  if (stages.size === 0) throw new Error('DBML Extension: layout file is not in a git-unmerged state');
 
   // Base stays lenient: a criss-cross virtual base may itself hold nested markers, and an empty
   // base only yields extra add/add conflicts, never deletions.
@@ -47,7 +47,7 @@ export async function detectSidecarConflict(dbmlUri: vscode.Uri): Promise<Sideca
  *  empty, every key the other side kept would be "deleted" by that side and silently dropped. */
 async function readStageStrict(repoRoot: string, stage: 2 | 3, relpath: string): Promise<Layout> {
   const text = await showStage(repoRoot, stage, relpath);
-  if (text === null) throw new Error(`dddbml: could not read merge stage ${stage} of the layout file`);
+  if (text === null) throw new Error(`DBML Extension: could not read merge stage ${stage} of the layout file`);
   return parseLayoutStrict(text);
 }
 

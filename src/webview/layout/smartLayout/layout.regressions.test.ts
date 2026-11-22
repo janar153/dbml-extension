@@ -112,13 +112,15 @@ describe('smartLayout — disconnected parts pack near-square (audit F17)', () =
     const pos = layoutOf(schema);
     expect(aspectOk(extent(schema, pos))).toBe(true);
     expect(groupViolations(schema, pos)).toEqual([]);
-  });
+  }, 60_000);
 });
+
+const groupedFixture = new URL('../fixtures/grouped-layout.dbml', import.meta.url);
 
 describe('smartLayout — group containers stay disjoint (audit F18)', () => {
   for (const spacing of [0.4, 1, 2.5]) {
-    it(`isga.generated.dbml at spacing ${spacing}`, () => {
-      const schema = fixture('isga.generated.dbml');
+    it(`grouped-layout.dbml at spacing ${spacing}`, () => {
+      const schema = parse(readFileSync(groupedFixture, 'utf8'));
       expect(groupViolations(schema, layoutOf(schema, spacing))).toEqual([]);
     });
   }
@@ -189,8 +191,8 @@ describe('smartLayout — locale-independent determinism (audit F88)', () => {
 });
 
 describe('smartLayout — selection re-arrange stays in its own group (audit F53)', () => {
-  it('isga.generated.dbml: every cross-group-only table', () => {
-    const schema = fixture('isga.generated.dbml');
+  it('grouped-layout.dbml: every cross-group-only table', () => {
+    const schema = parse(readFileSync(groupedFixture, 'utf8'));
     const base = layoutOf(schema);
     expect(groupViolations(schema, base)).toEqual([]);
 

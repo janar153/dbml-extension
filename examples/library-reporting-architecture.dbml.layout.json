@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "edgeRouting": 2,
+  "tables": {
+    "arch:node:alias:dashboard": { "x": 1011, "y": 320 },
+    "arch:node:alias:monitor": { "x": 48, "y": 275 },
+    "arch:node:alias:rollup": { "x": 1010, "y": 158 },
+    "arch:node:alias:source": { "x": 49, "y": 149 }
+  },
+  "groups": {
+  },
+  "edges": {}
+}

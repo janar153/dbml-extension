@@ -1,0 +1,213 @@
+{
+  "name": "DBML",
+  "scopeName": "source.dbml",
+  "patterns": [
+    {
+      "include": "#frontmatter"
+    },
+    {
+      "include": "#body"
+    }
+  ],
+  "repository": {
+    "frontmatter": {
+      "name": "meta.frontmatter.dbml",
+      "begin": "\\A[ \\t]*---[ \\t]*$",
+      "end": "^[ \\t]*---[ \\t]*$",
+      "patterns": [
+        {
+          "include": "source.yaml"
+        },
+        {
+          "include": "#strings"
+        },
+        {
+          "name": "variable.parameter.frontmatter.dbml",
+          "match": "\\b[\\w-]+(?=[ \\t]*:)"
+        }
+      ]
+    },
+    "body": {
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#strings"
+        },
+        {
+          "include": "#structures"
+        },
+        {
+          "include": "#settings"
+        },
+        {
+          "include": "#types"
+        },
+        {
+          "include": "#literals"
+        },
+        {
+          "include": "#operators"
+        },
+        {
+          "include": "#brackets"
+        }
+      ]
+    },
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.dbml",
+          "begin": "/\\*",
+          "end": "\\*/",
+          "patterns": [
+            {
+              "include": "#comments"
+            }
+          ]
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "include": "#mlstrings"
+        },
+        {
+          "include": "#sqstrings"
+        },
+        {
+          "include": "#dqstrings"
+        },
+        {
+          "include": "#btstrings"
+        }
+      ]
+    },
+    "sqstrings": {
+      "name": "string.quoted.single.dbml",
+      "begin": "'",
+      "end": "'",
+      "patterns": [
+        {
+          "include": "#escapes"
+        }
+      ]
+    },
+    "dqstrings": {
+      "name": "string.quoted.double.dbml",
+      "begin": "[\"]",
+      "end": "[\"]",
+      "patterns": [
+        {
+          "include": "#escapes"
+        }
+      ]
+    },
+    "btstrings": {
+      "name": "string.quoted.single.dbml",
+      "begin": "[`]",
+      "end": "[`]",
+      "patterns": [
+        {
+          "include": "#escapes"
+        }
+      ]
+    },
+    "mlstrings": {
+      "name": "string.quoted.single.dbml",
+      "begin": "'''",
+      "end": "'''",
+      "patterns": [
+        {
+          "name": "constant.character.escape.dbml",
+          "match": "\\\\'''"
+        },
+        {
+          "include": "#escapes"
+        },
+        {
+          "name": "constant.character.escape.dbml",
+          "match": "\\\\"
+        }
+      ]
+    },
+    "escapes": {
+      "name": "constant.character.escape.dbml",
+      "match": "\\\\."
+    },
+    "structures": {
+      "patterns": [
+        {
+          "name": "keyword.control.dbml",
+          "match": "(?i:\\b(?:use|reuse|from|as)\\b)"
+        },
+        {
+          "name": "entity.name.type.dbml",
+          "match": "(?i:\\b(?:project|indexes|tablegroup|table|enum|ref|dep|note|tablepartial|records|checks|diagramview|metadata|schema|group|link)\\b)"
+        },
+        {
+          "name": "storage.type.architecture.dbml",
+          "match": "(?i:\\b(?:Server|Function|Container|Service|Registry|Database|Cache|Queue|Topic|Storage|Bucket|Warehouse|Search|LoadBalancer|Proxy|VPN|Gateway|Firewall|Router|Secret|DNS|CDN|Internet|User|Browser|Mobile|Team|CLI|Monitoring|Logging|Alerting|Scheduler|Pipeline|Model|Agent|VectorStore|MCP|Connector|Skill)\\b)(?=\\s+[\"\\p{L}_])"
+        }
+      ]
+    },
+    "settings": {
+      "patterns": [
+        {
+          "name": "variable.parameter.dbml",
+          "match": "\\b[\\p{L}_][\\p{L}\\d_-]*(?=\\s*:)"
+        },
+        {
+          "name": "storage.modifier.dbml",
+          "match": "(?i:\\b(?:indexes|ref|dep|note|headercolor|pk|null|increment|unique|default|primary|key|name|as|color|none|check|tables|tablegroups|notes|schemas|inactive|example|not|asc|desc|delete|update|cascade|restrict|set|action)\\b)"
+        }
+      ]
+    },
+    "types": {
+      "name": "keyword.dbml",
+      "match": "(?i:\\b(?:tinyint|smallint|mediumint|int|integer|bigint|float|double|decimal|dec|bit|bool|real|money|binary_float|binary_double|smallmoney|enum|char|binary|varchar|varbinary|tinyblob|tinytext|blob|text|mediumblob|mediumtext|longblob|longtext|set|inet6|uuid|nvarchar|nchar|ntext|image|varchar2|nvarchar2|date|time|datetime|datetime2|timestamp|year|smalldatetime|datetimeoffset|xml|sql_variant|uniqueidentifier|cursor|bfile|clob|nclob|raw|boolean|json|jsonb|timestamptz|numeric|as|by|long|medium|int1|int2|int3|int4|int8|float4|float8|varcharacter|precision|unsigned|signed|ucase|lcase|mid|len|round|rank|now|format|coalesce|ifnull|isnull|nvl)\\b)"
+    },
+    "literals": {
+      "patterns": [
+        {
+          "name": "variable.parameter.dbml",
+          "match": "(?i:\\b(?:true|false)\\b)"
+        },
+        {
+          "name": "constant.language.dbml",
+          "match": "(?i:\\bnull\\b)"
+        },
+        {
+          "name": "constant.other.color.dbml",
+          "match": "#(?:[\\da-fA-F]{8}|[\\da-fA-F]{6}|[\\da-fA-F]{3})\\b"
+        },
+        {
+          "name": "constant.numeric.dbml",
+          "match": "(?<![\\p{L}\\d_.])[+-]?(?:\\d+(?:_+\\d+)*(?:\\.\\d+)?|\\.\\d+)(?:[eE][+-]?\\d+)?(?![\\p{L}\\d_])"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "support.type.dbml",
+          "match": "<->|->|<-|<>|[<>-]"
+        },
+        {
+          "name": "keyword.operator.dbml",
+          "match": "[~*?+:]"
+        }
+      ]
+    },
+    "brackets": {
+      "name": "punctuation.separator.dbml",
+      "match": "[{}\\[\\](),.]"
+    }
+  }
+}

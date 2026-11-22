@@ -1,8 +1,18 @@
-# dddbml — DBML diagrams for VS Code, Git-friendly, DDD-aware
+# DBML Extension — DBML diagrams for VS Code, Git-friendly, DDD-aware
+
+[GitHub repository](https://github.com/janar153/dbml-extension) · [Report an issue](https://github.com/janar153/dbml-extension/issues)
+
+DBML Extension is an independently maintained fork of [dddbml by TWulfZ](https://github.com/TWulfZ/dddbml). See [LICENSE](LICENSE) for the original MIT license and copyright notice.
+
+Editor language support adapts [vscode-dbml by Matthew Meyers](https://github.com/mattmeyers/vscode-dbml). See its [MIT license and copyright notice](THIRD-PARTY-LICENSE-vscode-dbml.txt).
 
 Interactive diagram for `.dbml` files, rendered beside the editor. The **source of truth stays in your `.dbml`**: you write it in the editor, and the diagram only applies small, minimal text edits when you ask for them (new table, new FK, delete). Table positions, group colors and edge shapes live in a sibling JSON file with deterministic formatting, so your team reviews the diagram in the same PR as the schema.
 
-<img width="1917" height="1001" alt="dddbml overview" src="https://github.com/user-attachments/assets/021105af-da16-4f30-8e5b-313f72ac43a6" />
+## DBML in action
+
+![In VS Code, open the bookshop diagram beside the syntax-highlighted DBML and drag a table to see its relationship lines follow.](https://raw.githubusercontent.com/janar153/dbml-extension/extension-media/docs/media/dbml-in-action.gif)
+
+[Syntax highlighting screenshot](https://raw.githubusercontent.com/janar153/dbml-extension/extension-media/docs/media/dbml-language-support.png) · [Side-by-side diagram screenshot](https://raw.githubusercontent.com/janar153/dbml-extension/extension-media/docs/media/dbml-diagram-preview.png)
 
 Built for:
 
@@ -12,13 +22,25 @@ Built for:
 
 ## Install
 
+Run `pnpm run package` from the repository root to build a VSIX in `packages/`.
+The five most recently built release archives are retained, including releases
+from before the rename. Rebuilding the same version replaces its archive.
+
 ```bash
-code --install-extension dddbml-<version>.vsix
+code --install-extension packages/dbml-extension-<version>.vsix
 ```
 
-Open a `.dbml` file and run **`dddbml: Open Diagram`** (command palette or the editor-title icon).
+Open a `.dbml` file and run **`DBML Extension: Open Diagram`** (command palette or the editor-title icon).
+
+If you are switching from dddbml, copy any customized VS Code settings from `dddbml.*` to `dbml-extension.*` and update any custom keybindings that reference the old command IDs. Existing DBML and layout files work with DBML Extension.
 
 ## Features
+
+**DBML editor**
+
+- Native syntax highlighting for `.dbml` files, with line and block comments, bracket matching, auto-closing pairs, and snippets for common declarations. The grammar covers database structure, diagram views and metadata, lineage, architecture, and module syntax.
+- Open the diagram beside the editor with **DBML Extension: Open Diagram**. In trusted workspaces, live diagrams resolve `use` and `reuse` across local DBML files and refresh when a dependency is saved. Modules must stay within the containing workspace folder, or the entry file's folder when opened on its own.
+- Multi-file rendering is available in the live diagram. Source edits, SQL export, and Git revision views still use their existing single-file paths. Edit imported definitions in the source editor.
 
 **Canvas**
 - Tables, refs and groups parsed with the official `@dbml/core` in a background worker; tables with no saved position are arranged by bounded context.
@@ -57,7 +79,7 @@ Open a `.dbml` file and run **`dddbml: Open Diagram`** (command palette or the e
 - Schema → **PostgreSQL SQL script**. Choose **PostgreSQL (SQL)** in **Export Schema** to save a `.sql` file containing the full schema, including keys, constraints, indexes, and enums.
 - Diagram → **PNG / SVG / clipboard**, whole diagram, current view or selection. Prefer SVG for very large diagrams.
 
-**Settings** — zoom step and limits, LOD threshold, UI density, snap-to-grid, layout spacing and export defaults, editable from the in-app Settings panel or VS Code settings (`dddbml.*`).
+**Settings** — zoom step and limits, LOD threshold, UI density, snap-to-grid, layout spacing and export defaults, editable from the in-app Settings panel or VS Code settings (`dbml-extension.*`).
 
 ## Layout file
 
@@ -85,25 +107,25 @@ Only shared design goes into this file. Your camera position and which groups yo
 
 ## Design vs data
 
-Keep the `.dbml` about **data** (tables, columns, refs, `records`, `Dep`) and let the layout file carry **design** (positions, colors, bend points). A DBML `headercolor` is honored as a fallback, but it is never copied into the layout file: the moment you pick a table color in the diagram, the layout color wins and dddbml shows a one-time notice. Choosing colors in the UI keeps diagram tweaks out of your schema diffs and lets several people restyle the diagram without touching the source of truth.
+Keep the `.dbml` about **data** (tables, columns, refs, `records`, `Dep`) and let the layout file carry **design** (positions, colors, bend points). A DBML `headercolor` is honored as a fallback, but it is never copied into the layout file: the moment you pick a table color in the diagram, the layout color wins and DBML Extension shows a one-time notice. Choosing colors in the UI keeps diagram tweaks out of your schema diffs and lets several people restyle the diagram without touching the source of truth.
 
 ## Commands
 
 | Command | Effect |
 |---|---|
-| `dddbml: Open Diagram` | Open the diagram beside the active `.dbml`. |
-| `dddbml: Auto-arrange Diagram…` | Smart layout (all / new / selection) with edge ordering. |
-| `dddbml: Export Schema…` | Export TypeORM entities or a PostgreSQL SQL script. |
-| `dddbml: Export Image…` | PNG / SVG / clipboard export. |
-| `dddbml: Reset Layout` | Drop saved positions and re-run auto-layout. |
-| `dddbml: Prune orphan layout entries` | Remove layout entries whose table or group no longer exists. |
-| `dddbml: Zoom In / Zoom Out / Reset View / Fit to Content` | Viewport commands, bound to the shortcuts above while the diagram is focused. |
+| `DBML Extension: Open Diagram` | Open the diagram beside the active `.dbml`. |
+| `DBML Extension: Auto-arrange Diagram…` | Smart layout (all / new / selection) with edge ordering. |
+| `DBML Extension: Export Schema…` | Export TypeORM entities or a PostgreSQL SQL script. |
+| `DBML Extension: Export Image…` | PNG / SVG / clipboard export. |
+| `DBML Extension: Reset Layout` | Drop saved positions and re-run auto-layout. |
+| `DBML Extension: Prune orphan layout entries` | Remove layout entries whose table or group no longer exists. |
+| `DBML Extension: Zoom In / Zoom Out / Reset View / Fit to Content` | Viewport commands, bound to the shortcuts above while the diagram is focused. |
 
 Drag a database dependency line or an architecture link to add a bend. Click the line to reveal its handles, drag a handle to reposition it, or double-click it to remove the bend. Drag either endpoint handle to move the attachment around the node or table. Bends and attachments are saved in the layout sidecar. Select or right-click a line for **Reset line** and **Edge color**.
 
 ## System architecture diagrams
 
-Set `diagram_type: arch` in the front matter and open the file with **dddbml: Open Diagram**.
+Set `diagram_type: arch` in the front matter and open the file with **DBML Extension: Open Diagram**.
 
 ```dbml
 ---
@@ -141,6 +163,8 @@ pnpm test             # vitest
 pnpm typecheck
 ```
 
+Run `pnpm test:perf` on an idle machine to check the absolute drag-frame and A* routing budgets against `huge.dbml`. The regular suite runs the same cases and checks correctness and relative drag speedups.
+
 Press `F5` to launch an Extension Development Host, open a `.dbml` there (e.g. `test/fixtures/huge.dbml`, 5000 tables) and run the command. `pnpm watch:extension` / `pnpm watch:webview` rebuild on change.
 
 - `src/extension/` — VS Code host: parsing, layout file I/O, git, exporters, panel lifecycle.
@@ -164,3 +188,14 @@ References support inline, short, and long forms; `>`, `<`, `-`, and `<>`; and `
 Standalone enum definitions and index/check definitions remain in the DBML source. Injected partial columns and index primary keys affect the displayed tables.
 
 Syntax reference: [official DBML documentation](https://dbml.dbdiagram.io/docs/).
+
+## CI and releases
+
+Pull requests targeting `main` generate test fixtures, type-check, run the test
+suite, and build and verify the VSIX. Require the **Validate extension** check
+in the GitHub rules for `main` to block merges while validation is pending or
+failing.
+
+Updates to `main` repeat those checks and publish a GitHub release with the
+validated VSIX for a new version in `package.json`. Bump that version for each
+release. Existing releases stay available on GitHub.

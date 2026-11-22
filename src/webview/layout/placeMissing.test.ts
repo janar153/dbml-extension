@@ -9,8 +9,8 @@ import type { QualifiedName, Schema } from '../../shared/types';
 type Point = { x: number; y: number };
 interface Rect { x: number; y: number; w: number; h: number }
 
-function fixture(name: string): Schema {
-  const res = parseDbml(readFileSync(resolve(process.cwd(), 'test/fixtures', name), 'utf8'));
+function fixture(path: string | URL): Schema {
+  const res = parseDbml(readFileSync(path, 'utf8'));
   if (!res.schema) throw new Error(res.error.message);
   return res.schema;
 }
@@ -45,7 +45,7 @@ function bounds(rects: Rect[]): Rect {
 
 describe('placeMissingTables — first open without a sidecar (spec 13)', () => {
   it('lays huge.dbml out as a compact block, not a horizontal strip', () => {
-    const schema = fixture('huge.dbml');
+    const schema = fixture(resolve(process.cwd(), 'test/fixtures', 'huge.dbml'));
     const pos = new Map(place(schema));
     expect(pos.size).toBe(schema.tables.length);
     const box = bounds(schema.tables.map((t) => rectOf(schema, pos, t.name)));
@@ -54,7 +54,7 @@ describe('placeMissingTables — first open without a sidecar (spec 13)', () => 
   }, 60_000);
 
   it('keeps each TableGroup together: no foreign table inside a group box', () => {
-    const schema = fixture('isga.generated.dbml');
+    const schema = fixture(new URL('./fixtures/grouped-layout.dbml', import.meta.url));
     expect(schema.groups.length).toBeGreaterThan(1);
     const pos = new Map(place(schema));
     for (const g of schema.groups) {
@@ -68,14 +68,14 @@ describe('placeMissingTables — first open without a sidecar (spec 13)', () => 
   });
 
   it('is a no-op once every table has a position, so the re-run effect places nothing twice', () => {
-    const schema = fixture('small.dbml');
+    const schema = fixture(resolve(process.cwd(), 'test/fixtures', 'small.dbml'));
     const first = new Map(place(schema));
     expect(first.size).toBe(schema.tables.length);
     expect(place(schema, first)).toEqual([]);
   });
 
   it('places only the missing tables, clear of the ones already on the canvas', () => {
-    const schema = fixture('small.dbml');
+    const schema = fixture(resolve(process.cwd(), 'test/fixtures', 'small.dbml'));
     const full = new Map(place(schema));
     const missing = schema.tables.slice(0, 3).map((t) => t.name);
     const existing = new Map(full);

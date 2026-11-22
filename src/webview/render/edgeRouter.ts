@@ -570,7 +570,10 @@ class LaneGrid {
   /** Adds to `out` every edge whose lane meets `box`. */
   public collect(box: Band, out: Set<number>): void {
     for (let c = Math.floor(box.x0 / LANE_CELL); c <= Math.floor(box.x1 / LANE_CELL); c++) {
-      for (const i of this.cells.get(c) ?? []) if (!out.has(i) && bandsMeet(laneBand(this.lanes.get(i)!), box)) out.add(i);
+      for (const i of this.cells.get(c) ?? []) {
+        const lane = this.lanes.get(i)!;
+        if (lane.hi > box.x0 && lane.lo < box.x1 && lane.yHi >= box.y0 && lane.yLo <= box.y1) out.add(i);
+      }
     }
   }
 }

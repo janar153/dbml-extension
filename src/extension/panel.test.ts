@@ -76,6 +76,28 @@ afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
 });
 
+it('renders a newly created module and reloads when that dependency changes', async () => {
+  const h = await open({ dbml: "use * from './shared'\nTable local { id int }" });
+  const dependency = Uri.file(join(h.dir, 'shared.dbml'));
+  expect(h.since('schema:update').at(-1)?.payload).toMatchObject({ parseError: { message: expect.any(String) } });
+
+  writeFileSync(dependency.fsPath, 'Table imported { id int }');
+  h.mark();
+  await fake.fireFsEvent('create', dependency);
+  await vi.waitFor(() => expect(h.since('schema:update').at(-1)?.payload).toMatchObject({
+    parseError: null,
+    schema: { tables: [expect.objectContaining({ name: 'public.imported' }), expect.objectContaining({ name: 'public.local' })] },
+  }));
+
+  writeFileSync(dependency.fsPath, 'Table renamed { id int }');
+  h.mark();
+  await fake.fireFsEvent('change', dependency);
+  await vi.waitFor(() => expect(h.since('schema:update').at(-1)?.payload).toMatchObject({
+    parseError: null,
+    schema: { tables: [expect.objectContaining({ name: 'public.local' }), expect.objectContaining({ name: 'public.renamed' })] },
+  }));
+});
+
 describe('sidecar watcher echo guard (F01)', () => {
   it('reloads when the disk returns to the content the panel itself last wrote', async () => {
     const h = await open();

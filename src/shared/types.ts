@@ -534,7 +534,7 @@ export type WebviewToHost =
 
 /**
  * Flat dotted-key patch shape used by `settings:update`. Keys match the
- * `dddbml.*` configuration keys (without the `dddbml.` prefix).
+ * `dbml-extension.*` configuration keys (without the `dbml-extension.` prefix).
  */
 export interface FlatSettingsPatch {
   'zoomStep': number;

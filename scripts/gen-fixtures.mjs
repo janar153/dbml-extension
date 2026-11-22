@@ -137,7 +137,7 @@ function genMergeFixture(count) {
 
   console.log(`✓ conflicted fixture ready: ${repo}`);
   console.log(`  schema: 30 tables · conflicts: ${count} (the rest auto-merge)`);
-  console.log(`  open it: launch the Extension Dev Host (F5), open ${join(repo, 'schema.dbml')}, run "dddbml: Open Diagram"`);
+  console.log(`  open it: launch the Extension Dev Host (F5), open ${join(repo, 'schema.dbml')}, run "DBML Extension: Open Diagram"`);
 }
 
 const mode = process.argv[2];

@@ -1,368 +1,39 @@
-# Changelog
+# DBML Extension changelog
 
-All notable changes to this project will be documented in this file.
+[GitHub repository](https://github.com/janar153/dbml-extension) · [Report an issue](https://github.com/janar153/dbml-extension/issues)
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and this project adheres to [Semantic Versioning](https://semver.org/).
+## 2.0.0
 
-## [1.1.0] — 2026-11-22
+- Added native DBML syntax highlighting, comment toggling, bracket and quote pairing, and editor snippets alongside the diagram. Adapted the MIT-licensed language assets from [vscode-dbml by Matthew Meyers](https://github.com/mattmeyers/vscode-dbml) for current DBML structure, visualization, lineage, architecture, and module syntax.
+- Live diagrams now resolve relative `use` and `reuse` declarations in trusted local projects and refresh when an imported file changes.
 
-### Added
-- Export the full DBML schema as a PostgreSQL SQL script with tables, keys, constraints, indexes, and enums.
+## 1.1.0 — 2026-11-22
 
-## [1.0.3] — 2026-11-21
-
-### Added
-- Share the relationship toolbar and context menu across references, dependencies, and architecture links, including Reset line and Edge color.
-
-## [1.0.2] — 2026-11-21
-
-### Added
-- Move either attachment of an architecture link or dependency line around its endpoint while keeping saved bends.
-
-## [1.0.1] — 2026-11-21
-
-### Added
-- Drag architecture links and database dependency lines directly to add bends. Save bends in the layout sidecar and include them in exports.
-
-## [1.0.0] — 2026-11-21
-
-### Added
-- Open DBML system architecture diagrams with role-based nodes, nested groups, notes, and labeled links.
-- Auto-arrange architecture diagrams, drag groups and their contents together, and save positions in the layout sidecar.
-- Export architecture diagrams to SVG and PNG with the existing printer-friendly options.
-
-## [0.9.0] — 2026-11-21
-
-### Added
-- Render Project attributes in a movable title block with a separate project name font size.
-- Load sibling logo and image files and embed them in title-block SVG exports.
-
-## [0.8.1] — 2026-11-21
-
-### Fixed
-- Store note and project-caption coordinates and typography in the shared layout sidecar. Copy legacy inline note layout on the next layout save.
-- Render the project note on the canvas and make both project captions draggable and editable through their layout controls.
-
-## [0.8.0] — 2026-11-21
-
-### Added
-- Show the DBML project title and overview. Optionally include the project note in image exports.
-- Select a DBML named diagram view and export its visible tables, groups, and labels.
-- Use DBML table-group colors and show group notes on hover.
-
-### Fixed
-- Draw inactive relationships as dotted lines and exclude them from foreign-key labels and TypeORM relations.
-
-## [0.7.0] — 2026-11-21
-
-### Added
-- Add, drag, and edit diagram labels backed by standalone DBML notes. Labels support custom fonts and font sizes and appear in image exports.
-
-## [0.6.0] — 2026-11-21
-
-### Added
-- Edit the printer-friendly diagram in light or dark mode. Printer-friendly SVG export keeps the positions and routes edited in either mode.
-
-## [0.5.1] — 2026-11-21
-
-### Fixed
-- Show FK for foreign-key fields that also belong to the primary key, on the diagram and in SVG exports.
-
-## [0.5.0] — 2026-11-21
-
-### Added
-- Added a diagram setting for a headerless PK/FK column beside field names.
-- Added printer-friendly SVG export with a light palette, full field labels, and adjusted relationship routes.
-
-### Changed
-- Left-drag on empty canvas pans when no tables are selected; Shift-drag box-selects.
-- Relationship endpoints can be dragged to any position on all four table sides, with persistence and undo/redo. Moving an endpoint reroutes its bends; undo restores the previous shape.
-- Relationship symbols use standard crow’s-foot notation, including optional endpoints; DBML ref colors and relationship details are preserved.
-- Updated the official DBML parser for enum aliases and index column sort order.
-
-## [0.4.2] — 2026-10-13
-
-### Fixed
-- `Table` blocks in the editor are no longer underlined from top to bottom ([#4](https://github.com/TWulfZ/dddbml/issues/4)). `Ctrl`+click anywhere in the block still focuses the table in the diagram; while `Ctrl` is held the block takes the link color, and on click it flashes briefly. The tooltip now reads *Focus in diagram*.
-
-## [0.4.1] — 2026-10-06
-
-Hotfix for 0.4.0: diagrams made with earlier versions keep their hand-arranged relations.
-
-### Fixed
-- Layouts saved before 0.4.0 store router-made bends without marking them as automatic, so 0.4.0 drew them with small kinks next to the tables. Saved bends are now always kept and only those artifacts are tidied at draw time (elbows and hooks under 24 px, steps under 8 px next to a stub); a step you drew on purpose is never flattened. Nothing is written to the layout file until you edit that relation.
-- Saved top/bottom sides from older versions are ignored, so no relation leaves through the bottom of a table anymore (the UI only pins left/right).
-- The layout file now records `"edgeRouting": 2` (informational; older readers ignore it).
-
-## [0.4.0] — 2026-10-05
-
-Relationships route like dbdiagram: always out of the column rows on the left/right sides, never under a table.
-
-### Changed
-- **Left/right-only edges** (`specs/05`): a target to the right gets a Z with its bend at the midpoint of the gap; between 0 and 48 px the stubs keep their full length and the line jogs into an S; once the tables overlap horizontally the relation wraps around the favored right side as a C (left side when the right one is blocked). Replaces the 0.3.0 top/bottom ports for stacked tables, in both the canvas and *Order edges*. Old auto-routed top/bottom shapes in layout files are ignored and redrawn; manual ones are kept.
-- C routes nest outside self-loops and each other (12 px apart, shorter span inside); self-loop stacks pull in near a neighbouring table and yield a lane to a relation passing beside them.
-- Tables on the same row get an editable split at the midpoint instead of a flat line, and every middle segment can be dragged, even short ones.
-- The records preview grows to fit its columns (up to the window width) instead of a fixed 560 px box.
-- `Ctrl`+click anywhere in a `Table` block (not only its name) focuses it in the diagram.
-
-### Fixed
-- Edges whose trunk is on screen no longer disappear when their tables are panned out of view.
-- *Order edges* no longer saves a C that cuts through one of its own tables.
-
-### Known limitations
-- Tables touching side by side or heavily overlapping can hide the relation between them (no left/right route clears both tables).
-
-## [0.3.0] — 2026-10-02
-
-Bug audit (99 findings, 88 fixed in the first pass) plus assisted editing, DBML `records`/`Dep` support and a faster, safer canvas.
-
-### Added
-- **Assisted editing** (`specs/19`): right-click → *New table here*, *Add field* (opens the editor), drag a column port onto another column to create a ref, delete table/field/relation with a confirmation. Edits are minimal text changes to the `.dbml`, validated by a re-parse, undoable from the diagram (`Ctrl+Z`). One-time hint to enable Auto Save.
-- **Code ↔ diagram navigation**: `Ctrl`+click a `Table` name in the editor focuses it in the diagram; double-click a column jumps to its line.
-- **Self-reference loops** for FKs from a table to itself (selectable, recolor, flip side, delete).
-- **DBML `records`** (row-count badge + read-only grid) and **`Dep`** arrows with editable bend points (`specs/18`).
-- **Diff view**: collapsed groups with changes get a diff border; hidden changed tables are counted (`+k hidden`).
-
-### Changed
-- First open (and *Reset Layout*) arranges tables by bounded context instead of one long dagre strip; *Reset Layout* keeps colors and hidden flags and is undoable.
-- Tables stacked on top of each other connect through top/bottom ports instead of routing behind them; A* *Order edges* never cuts through its own tables.
-- Multi-table drags carry the hand-drawn bends of edges between the dragged tables; auto-arranged edge shapes are marked `auto` in the layout file and re-routed when their tables move.
-- Table drags re-route only the affected edges (~0.6 ms per frame on 5000 tables, was ~10 ms).
-- The `.dbml` is parsed in a worker thread; the extension host bundle no longer ships `@dbml/core` (74 KB).
-- Camera is saved per user in VS Code storage; undo history survives looking at past revisions.
-
-### Fixed
-- Read-only gate is enforced by the host too: no layout writes during a merge, diff or time travel (incl. after a webview reload, an aborted merge or a failed detection).
-- TypeORM export: typed defaults, composite PKs, 1:1 join side, `referencedColumnName`, referential actions, auto-increment widths, nullable columns, singularization, identifier/keyword safety, class-name collisions.
-- Parser: TableGroups in multi-schema diagrams, refs through table aliases, index-level PKs.
-- Layout file: entries written under the wrong key by earlier edge ordering are dropped; edge keys sorted locale-independently.
-- Git: paths with spaces/non-ASCII, symlinked workspaces, staged-new revert, stash conflicts reported correctly.
-- Many canvas fixes: wheel scrolling in panels, Space-key handling, fit ignoring hidden tables, PK/FK-only view geometry, context-menu clipping, emoji in image export, settings validation, and more (see `docs/audits/2026-09-22-bug-audit.md`).
-
-## [0.2.6] — 2026-05-30
-
-Conflict-resolver panel UX overhaul (`specs/14`, `specs/12`). Pure-webview — no host/protocol changes.
-
-### Changed
-- **Chevron-only stepper nav + progress spine.** Step-through Prev/Next are now icon-only chevrons with tooltips; a count pill, a progress bar (success-green at 100%) and a per-conflict dot rail replace the old text nav. The panel keeps a stable width so toggling Review-all ↔ Step-through no longer jumps.
-- **Git-style naming.** Sides are labeled **current** / **incoming** (not mine/theirs) to match an editor merge conflict (store keys stay `ours`/`theirs`). The step picks stack the position (`X:… Y:…`) under the side name to save width.
-- **Diff-orb rail.** The dot rail is clickable — jump to any conflict — with generous tiled hit targets (no need to land on the small circle) and a hover border cue. Orbs are colored by the resolved side using the editor's git current/incoming colors (`--ddd-merge-current/incoming`); unresolved = hollow grey; the cursor orb scales + accent border. It scrolls as one row by default (active orb auto-centered on next/prev) and an **expand toggle** (past ~28 orbs) reveals the full wrapped, height-capped grid.
-- **Less redundancy + a confirm step.** The conflict count now appears only in the `R/N resolved` pill (dropped from the title, the hint and the Apply button); **Apply opens a confirmation dialog** that restates the count. Removed the redundant check ticks. Bulk actions are compact two-line buttons (“All” over a git marker glyph `<<<`/`>>>`, full action in the tooltip).
-
-### Fixed
-- Resolver accessibility: a single `aria-live` region (the count pill), the dot rail exposes a labeled `role="group"`, dots carry per-conflict labels + `aria-current`, and the cursor indicator was made visually distinct from the keyboard focus ring.
-
-## [0.2.5] — 2026-05-30
-
-A "premium" UI polish pass: a floating, icon-only tool bar, a reusable styled tooltip, one canonical icon button across every overlay menu, and tasteful token-driven motion (`specs/12`, `specs/06`). Pure-webview — no host/protocol changes.
+First independent release of **DBML Extension**, based on **dddbml 0.4.2** by TWulfZ. This release consolidates the changes developed since that upstream baseline.
 
 ### Added
 
-#### Reusable `Tooltip` primitive (`src/webview/ui/Tooltip.tsx`, `specs/12`)
-- Lightweight styled tooltip for icon-only buttons, distinct from the rich canvas tooltip. Shows on **hover and keyboard focus**, with an open delay, Escape-dismiss, and a fade+rise entrance. Clones its trigger to inject `aria-label`/`aria-describedby` and drop the native `title` (no doubled OS tooltip); portaled to `<body>`. Optional shortcut-key chip (e.g. `Ctrl+Z`).
+- **PostgreSQL export.** Export a full DBML schema as a SQL script with tables, keys, constraints, indexes, and enums. The TypeORM exporter remains available.
+- **System architecture diagrams.** Use `diagram_type: arch` to show role-based nodes, nested groups, notes, and labeled links. Auto-arrange the diagram, drag groups with their contents, save positions in the layout sidecar, and export to SVG or PNG.
+- **Project title blocks and notes.** Display project attributes, the title, and the overview on the canvas. Move and style the title and overview independently, include the project note in image exports, and embed sibling logos and images in title-block SVG exports.
+- **Editable diagram labels.** Create and drag labels backed by standalone DBML notes, customize their fonts and sizes, and include them in image exports.
+- **Named diagram views.** Select a DBML view to show and export its visible tables, groups, and labels. TableGroups use DBML colors and show notes on hover.
+- **Printer-friendly editing and export.** Edit the diagram in light or dark print mode. Printer-friendly SVGs show full field labels and preserve the positions and routes edited in those modes. An optional headerless PK/FK column appears beside field names.
 
 ### Changed
 
-#### Floating, icon-only action bar (`src/webview/render/actionsPanel.tsx`, `specs/12`)
-- The bottom bar now **floats** (lifted off the edge, full border + shadow + radius in every state) instead of docking flush. It is **collapsible** to a single chevron handle and expands to one row of **fixed-size, icon-only** buttons (Auto-arrange · Grid/snap · Search · Export · Settings) with a staggered entrance. **Auto-arrange opens a popover** (Re-arrange all / Place new tables / Re-arrange selection) reusing the generic `ContextMenu`.
-
-#### Canonical icon button (`src/webview/ui/Button.tsx`, `specs/12`)
-- One fixed `size="tool"` (28×28) square for **all** floating-toolbar/menu icon buttons (action bar, zoom cluster, Diagram Views header, edge toolbar); dense list rows keep `size="icon"`. Geometry now lives in `size` and the icon variants (`history`/`zoom`/`toolbar`) carry **color/state only** — conflict-free, still no `tailwind-merge`. Press feedback (`active:scale`) moved to the base so every button gets it.
-
-#### Command relocations
-- **Undo/Redo → the zoom cluster** (history navigation now pairs with viewport navigation; a divider separates the groups).
-- **PK/FK-only filter → Diagram Views** as a *View options* toggle (it's a view option). The panel now **always renders** (even with no groups) and its open/focus state is store-driven, so the tool bar's **Search** button opens Diagram Views and focuses its search input.
-- Edge toolbar and the Diagram Views header buttons adopt the canonical icon button + tooltips.
-
-#### Motion (tokens only, `specs/12`)
-- Tooltip fade-rise, staggered tool-bar entrance, and a unified button press transition — all via existing `--ddd-*` tokens. `prefers-reduced-motion: reduce` now also zeroes `animation-delay` so the staggered entrance plays instantly.
-
-### Notes
-- *Deferred:* "select all relations" — needs a multi-edge selection model the store doesn't have yet (today only a single edge is selectable). It will land as a future command.
-
-## [0.2.4] — 2026-05-30
-
-Collaborative layout merge under Git, an in-canvas conflict resolver, and a large edge-rendering performance pass for thousands of relations (`specs/03`, `specs/14`, `specs/04`, `specs/05`, `specs/07`).
-
-### Added
-
-#### Collaborative 3-way layout merge (`specs/03`, `specs/14`)
-- **View-state left Git.** `viewport`, group `hidden`/`collapsed`, and table `hidden` now persist to a local-only file; the tracked sidecar carries **only** shared design (table x/y/color, group color, edges) — eliminating the per-commit conflict storm. Pan/zoom never touches the Git file.
-- **In-extension 3-way merge — zero manual git config.** On a conflicted sidecar, the extension reads Git's merge-index stages `:1:/:2:/:3:` and merges per key: unambiguous changes auto-resolve, and only genuine "both moved the same key" conflicts are surfaced. No merge driver, `.gitattributes`, or per-clone setup. `readLayout` now throws on conflict markers instead of silently wiping the layout.
-
-#### In-canvas ghost conflict resolver (`specs/14` §Tier-3)
-- Replaces the native QuickPick with a **blocking in-webview resolver**. Each table-position conflict draws **two ghost tables** — mine @ours, theirs @theirs — on the canvas. Hover previews (kept = accent bloom, the other dims red = discarded); click commits; every pick is revertible until **Apply**. Group/edge conflicts resolve as mine/theirs rows.
-- **Two views:** *Review all* (all-at-once list + bulk "keep all mine/theirs") and *Step through* (one diff at a time). The stepper **flies the camera to frame both ghost positions** of each diff — on **next/prev only**, never on hover — and picking **auto-advances** to the next unresolved conflict. Hovering a mine/theirs button **cross-highlights** its ghost (and vice-versa). Camera animation respects `prefers-reduced-motion`.
-- **Read-only while resolving:** pan/zoom only — no select, drag, edit, undo/redo, auto-arrange, or persist until you Apply (which writes the clean sidecar + `git add` once).
-- **Test fixtures:** one generator (`scripts/gen-fixtures.mjs` → `small | huge | merge <count>`) builds a real conflicted Git repo under `test/fixtures/<count>/` for hands-on review (`pnpm test:gen:merge` → 3- and 20-conflict scenarios).
+- **Relationships.** References use crow’s-foot notation, including optional endpoints, and preserve DBML colors and details. Reference endpoints can move along all four table sides, with saved routes and undo/redo. Drag dependencies and architecture links to add bends or move either attachment while keeping existing bends. Saved routes carry through to image exports. References, dependencies, and architecture links share controls for actions such as **Reset line** and **Edge color**.
+- **Canvas gestures.** Drag empty space with no tables selected to pan. Use Shift-drag to box-select.
+- **Extension identity.** DBML Extension has its own icon, repository links, and VS Code extension ID (`janar153.dbml-extension`). Commands and settings use `dbml-extension.*`. If moving from dddbml, copy custom settings to the new namespace and update custom keybindings. Existing DBML and layout files remain readable.
+- **Build and development workflow.** Packaging writes to `packages/` and retains the five most recently built release archives. Repository-local Codex skills cover engineering and Chromium and VS Code smoke testing.
 
 ### Fixed
-- **Lost conflict dialog (data-flow bug).** The old QuickPick wrote a marker-free, ours-biased file the moment it was cancelled, so the next open saw no markers and never re-ran the resolver — the dialog destroyed its own trigger. Now **nothing is written until Apply**: the conflicted file keeps its markers, so closing mid-merge re-triggers the resolver on reopen.
 
-### Performance
-- **Edges scale to thousands of relations** (`specs/04`, `specs/05`, `specs/07`). `routeRefs` is memoized on geometry, so routing no longer recomputes on every pan/zoom frame; **route-all-then-cull** also fixes a port jitter during pan. The interactive overlay (per-segment hit-DOM) is now built **only for the selected edge** — a single transparent hit-path per other edge — and a zoom LOD draws straight, marker-less lines at bird's-eye. Net: per-frame edge CPU and overlay node count drop sharply on large diagrams.
+- Fields that are both primary and foreign keys show their FK status on the canvas and in SVG exports.
+- Inactive references appear as dotted lines and are omitted from foreign-key labels and TypeORM relations.
+- Note and project-caption positions and typography are stored in the shared layout sidecar. Legacy inline note layout migrates on the next layout save.
+- Updated the DBML parser to handle enum aliases and index column sort order.
 
-## [0.2.3] — 2026-05-29
+## Upstream history
 
-Smart auto-layout — database-focused automatic table ordering (`specs/13-smart-auto-layout.md`).
-
-### Added
-
-#### Smart auto-layout
-- New **Auto-arrange** that positions every table from its foreign-key relationships and declared table groups: satellites orbit their parent, junction (M:N) tables sit between their two parents, hubs anchor radial star clusters, and TableGroups (bounded contexts) are honored as first-class clusters.
-- Three modes: **all** (re-arrange everything), **new** (place only un-positioned tables), **selection** (move only the selected tables; the rest stay as fixed obstacles).
-- Engine: ELK compound layout (`elkjs`) over a database-aware *classify → cluster* pipeline; dedicated radial placement for hub clusters; a column-alignment pass straightens FK rows; an AABB safety pass guarantees no overlaps. Output is deterministic (git-friendly).
-- Three triggers, all funnelling into one action: the command palette (`dddbml: Auto-arrange Diagram…`), the in-canvas Actions panel (wand button + 3-mode submenu, with a live selection count), and the right-click context menu on selected tables (*Auto-arrange selected (N)*).
-
-#### Reset relations
-- New *Reset relations (N)* on the right-click menu of selected tables: resets every edge touching the selection back to default routing — waypoints, legacy offsets and port-side overrides cleared, colour kept. One undoable step.
-
-### Changed
-- **Undoable auto-arrange (composite).** A single Ctrl+Z reverts a whole arrange — both the table moves and the edge-waypoint resets it triggered — via a new `ArrangeCommand` in the action history.
-- **Bulk moves reset stranded edge waypoints.** Waypoints are absolute world coords that don't follow tables, so a bulk move would strand them into staircase paths. Auto-arrange now clears the shape (colour + port sides preserved) of edges whose *both* endpoints moved; they re-route cleanly via the column-row resolver. The sidecar layout format is unchanged.
-
-### Notes
-- The ELK engine (`elkjs`) adds ~600 KB gzip to the webview bundle — a deliberate, accepted trade for higher-quality grouped layout (see `specs/07-performance-budgets.md`). Measured layout on the 5000-table fixture ≈ 2.6 s, within the 3 s budget.
-
-## [0.2.2] — 2026-05-29
-
-Major rework of interactive edge editing and edge visuals (`specs/05-edge-routing.md`, `specs/12-design-system.md`).
-
-### Changed
-
-#### Edge editing — two-tier control model
-- Editing a selected edge is now split into two tiers, replacing the v0.2.0 "hover a segment → ghost circle → drag to insert a waypoint" flow.
-- **Slide** — each editable run shows a real handle at its centre; drag it (or grab the run anywhere) to move the whole run perpendicular (1-DOF: horizontal ↕, vertical ↔). Sliding an end-arm inserts a jog so the rigid port stub never moves.
-- **Notch** — hovering a run reveals a ghost handle at the ¼ and ¾ positions (only the one nearest the cursor is shown); dragging it perpendicular carves a *local symmetric notch* — a new vertex — while the rest of the run stays flat (¼ carves the left side, ¾ the right).
-- Waypoints are now the literal orthogonal corners of the route; the previous collinear-collapse canonicalization is gone, so local bends are preserved. Editing one run never disturbs the rest (the route's corners are materialized first).
-- Every turn is a render-only rounded fillet — a corner is never a draggable node.
-
-### Added
-
-#### Edge editing
-- **Notch re-merge tolerance**: drag a notch's dipped run back to within ~10 world units of its original level and it snaps flat, dissolving the notch — no pixel-perfect aim needed. Double-clicking a notch also removes it.
-- Ghost handles grow on their own hover and show an axis-aware resize cursor (`ns-resize` / `ew-resize`); the centre (slide) handle stays visible while the edge is selected.
-
-#### Edge visuals
-- The marching-dot **flow** animation now renders on both hover **and** selection (previously hover only), with a pronounced bloom; the selected line carries its own subtle bloom.
-- Flow dots are true circles (`stroke-dasharray: 0 gap` + round caps) and the loop is seamless — no jump at the wrap.
-- New design tokens: `--ddd-edge-ghost-r` / `-hover`, `--ddd-edge-flow-width` / `-gap` / `-duration`, `--ddd-edge-bloom-flow` / `-selected`.
-
-### Notes
-- Sidecar format unchanged: `EdgeLayout.waypoints[]` still stores the route corners and existing layouts load without migration (edges without waypoints are unchanged); the new model reinterprets stored waypoints as literal corners.
-
----
-
-## [0.2.0] — 2026-05-27
-
-### Added
-
-#### Export to TypeORM
-- New **Export** button in the actions panel opens a modal to generate TypeORM entities from the full schema or a selection of tables.
-- Registry+strategy architecture: adding Prisma, SQL DDL, or Mermaid requires one new module and one line of registration — no changes to dispatch or modal code.
-- PostgreSQL dialect: full DBML→TypeScript type mapping (`int`, `bigint`, `varchar(N)`, `uuid`, `boolean`, `timestamp`/`timestamptz`, `numeric(P,S)`, `json`/`jsonb`, `bytea`, and more); unknown types fall back to `string` with a warning.
-- Relation decorators generated from DBML `Ref`: `@OneToOne`, `@OneToMany`, `@ManyToOne`, `@ManyToMany` with `@JoinColumn`/`@JoinTable` on the owning side.
-- Composite foreign keys emitted as `@JoinColumn([{ name: 'a' }, { name: 'b' }])`.
-- Scope `Selected`: tables outside the selection emit their FK column as a plain property; a warning identifies each cut relation.
-- English singularization with known irregulars (`children→Child`, `people→Person`, `addresses→Address`, etc.).
-- Export options: SQL dialect, singularize class names, include `typeorm` import line, emit `nullable` explicitly.
-- Result opens as an untitled VSCode document; the user decides where to save it.
-- Command palette entry `dddbml: Export Schema…` delegates to the active webview modal.
-
-#### Settings
-- All formerly hardcoded viewport and render constants are now configurable in VSCode Settings UI and `settings.json` under the `dddbml.*` namespace.
-- `dddbml.zoomStep`, `dddbml.zoomMin`, `dddbml.zoomMax` — zoom behaviour.
-- `dddbml.lod.mediumThreshold`, `dddbml.lod.lowThreshold` — LOD breakpoints.
-- `dddbml.export.defaultFormat`, `dddbml.export.typeorm.*` — export defaults.
-- Changes propagate to the webview immediately via `settings:loaded` without a reload.
-- Settings panel inside the webview (gear icon in the actions panel) with numeric inputs, toggles, selects, and a "Reset to defaults" button.
-
-#### Edge waypoints
-- Any edge segment can now carry user-defined waypoints: hover a segment to reveal a ghost circle, click-drag to insert a waypoint at that position.
-- Double-click a waypoint circle to remove it; context-menu "Reset edge waypoints" clears all waypoints on an edge.
-- Waypoints are stored in `EdgeLayout.waypoints[]` in the sidecar JSON and survive reloads.
-- Routing with waypoints uses strict horizontal/vertical alternation; collinear points are collapsed.
-- Full backward compatibility: an edge with no waypoints produces a path identical to the original H-V-H algorithm. The legacy `dx` midpoint offset is still honoured until the user adds a waypoint.
-
-#### Undo / Redo
-- `Ctrl+Z` / `Cmd+Z` undoes the last diagram edit; `Ctrl+Shift+Z` and `Ctrl+Y` redo.
-- **Move commands**: single-table drag and multi-table marquee drag each produce one undoable command. A drag with zero net displacement is a no-op and adds nothing to the stack.
-- **Waypoint commands**: add, move, remove, and clear operations on edge waypoints are individually undoable.
-- Stack capacity: 200 entries; oldest entries drop FIFO when the cap is exceeded.
-- Undo / Redo buttons in the actions panel; both are disabled while their respective stack is empty.
-- The history stack is cleared when the layout is reloaded from disk or when the set of table names changes (prevents undo-to-a-deleted-table). Schema edits that only modify columns preserve the stack.
-- Undo and redo trigger a debounced layout persist so the sidecar stays in sync.
-
-#### Design system
-- CSS rewritten with `@layer reset, tokens, base, surfaces, components, state, utilities`; layer order enforces specificity without `!important`.
-- Complete design token set: spacing (4 pt scale, `--ddd-space-0..8`), border radii, typography scale, dark-tuned drop shadows, and motion tokens with three durations and three easings.
-- Three density modes — `compact`, `cozy` (default), `comfortable` — toggled via `data-density` on the root element and persisted as `dddbml.ui.density`. Table width, row height, padding, header height, and font size all respond.
-- `densityMetrics()` TypeScript mirror in `src/webview/layout/density.ts` keeps `estimateSize()` in sync with the CSS values.
-- Bounded Context colour palette: 12 curated colours (`--ddd-bc-{1..12}-surface/border`) that are colour-blind safer and tuned for dark VSCode themes, replacing the previous `hsl(hash, 55%, 60%)` approach.
-- `bcIndex(name)` deterministic hash assigns a stable palette slot to each group name across reloads.
-- Semantic tokens (`--ddd-surface-*`, `--ddd-fg-*`, `--ddd-border-*`, `--ddd-accent`, `--ddd-edge-*`) map to `--vscode-*` variables with literal fallbacks; the diagram reacts to theme changes without a reload.
-- `prefers-reduced-motion: reduce` sets all animation durations to `0ms`.
-- All magic pixel and hex values removed from component CSS; every value reads from a token.
-
-### Changed
-
-- Export TypeORM and Settings configuration keys (`dddbml.export.typeorm.dialect` enum) added to `package.json#contributes.configuration`.
-- `EdgeLayout` in the sidecar schema gains an optional `waypoints` array; existing files without it are read as empty-waypoint edges (no migration needed).
-- Group and table colours now default to the BC palette slot derived from the group name; existing explicit hex values in the sidecar are preserved as-is.
-- LOD `lowThreshold` and `mediumThreshold` are now read from settings rather than hardcoded constants.
-
-### Deferred to future releases
-
-- TypeORM: DBML `enum` types → `@Column({ type: 'enum', enum: … })`.
-- TypeORM: DBML `indexes` → `@Index([…])` decorator.
-- TypeORM dialects: MySQL, SQLite, MSSQL.
-- Edge: arrowhead markers to distinguish cardinality (`1:*` vs `*:*`).
-- Edge: self-loop path (currently degenerates visually).
-- Edge: rounded elbows (`stroke-linejoin: round`).
-- Minimap, go-to-table search, edge highlight on table hover.
-- A*-based edge routing that avoids crossing tables.
-- Export to Prisma, Mermaid, SQL DDL, PNG, SVG.
-- Light and High-Contrast theme support for the design system.
-
----
-
-## [0.1.0] — 2026-04-16
-
-Initial release.
-
-### Added
-
-- Open Diagram command renders any `.dbml` file as an interactive diagram in a webview beside the editor.
-- Parser wrapper over `@dbml/core` (dbmlv2) with quoted-identifier normalization.
-- Auto-layout with `@dagrejs/dagre` for tables without saved positions; existing positions preserved on reparse.
-- Sidecar layout file (`<name>.dbml.layout.json`) with Git-friendly stable ordering, integer coordinates, atomic writes.
-- Persistence of per-table position, per-table color, per-table hidden flag, per-group collapse/hide/color, per-edge midpoint offset, viewport pan/zoom.
-- Grid-bucketed spatial index (512 × 512 px) with viewport culling; 3-level LOD (`rect`/`header`/`full`) selected by zoom.
-- Manhattan edge router, always horizontal (column-aligned), with port distribution to minimize overlap across multiple refs on the same side.
-- Cardinality markers: crow's-foot (many) and perpendicular bar (one), at both endpoints.
-- Draggable middle segment per edge with persisted `dx` offset.
-- Marquee selection (click-drag on empty viewport, `Shift` to extend, `Esc` to clear) and multi-table drag.
-- Double-click table header → reveals the `Table foo { ... }` declaration in the DBML editor.
-- Custom tooltip on hover for columns and tables with `Note`.
-- Gear button per table and per group opens a color picker with 20 presets + custom + reset.
-- `TableGroup` support: visible container (dashed box with labeled tab), collapsed (single box with aggregated edges), hidden.
-- "Diagram Views" panel: search, hide-all, collapse-all, per-group rows, per-table rows inside expanded groups.
-- Bottom actions panel with "PK/FK only" toggle (collapses columns to PK + FK only).
-- Zoom controls: `+` / `-` buttons, editable zoom percentage input, fit-to-content, reset.
-- Keyboard shortcuts registered with `when: activeWebviewPanelId == 'dddbml.diagram'`:
-  - `Ctrl+=` / `Ctrl+shift+=` — zoom in
-  - `Ctrl+-` — zoom out
-  - `Ctrl+0` — reset view
-  - `Ctrl+1` — fit to content
-- Hot-reload: FS watcher on both the DBML file and its layout sidecar; self-write suppression prevents echo loops.
-- Commands: `dddbml.openDiagram`, `dddbml.resetLayout`, `dddbml.pruneOrphans`, `dddbml.zoomIn`, `dddbml.zoomOut`, `dddbml.resetView`, `dddbml.fitToContent`.
-- Respects active VSCode color theme (light / dark / high-contrast).
-- Synthetic 5000-table fixture generator (`scripts/gen-huge-fixture.mjs`) and medium/tiny fixtures under `test/fixtures/`.
-
-### Deferred to future releases
-
-- DBML `!include` / multi-file projects.
-- A*-based edge routing that avoids crossing tables.
-- Export to SQL, Prisma, PNG, SVG.
-- Minimap, go-to-table search, edge highlight on table hover.
-- Collaborative cursors.
+Changes through dddbml 0.4.2 belong to the original project and its contributors. See the [original dddbml changelog](https://github.com/TWulfZ/dddbml/blob/main/CHANGELOG.md).

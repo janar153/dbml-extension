@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "edgeRouting": 2,
+  "tables": {
+    "arch:node:alias:api": { "x": 398, "y": 118 },
+    "arch:node:alias:db": { "x": 799, "y": 118 },
+    "arch:node:alias:readers": { "x": 64, "y": 123 }
+  },
+  "groups": {
+  },
+  "edges": {}
+}

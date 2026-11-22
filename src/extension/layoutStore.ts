@@ -15,7 +15,7 @@ export function emptyLayout(): Layout {
 /** The sidecar exists but is not valid JSON (hand edit gone wrong). Distinct from a conflict. */
 export class LayoutParseError extends Error {
   constructor(public readonly parseError: unknown, public readonly text: string) {
-    super('dddbml: layout sidecar is not valid JSON');
+    super('DBML Extension: layout sidecar is not valid JSON');
     this.name = 'LayoutParseError';
   }
 }
@@ -24,7 +24,7 @@ export class LayoutParseError extends Error {
  *  Callers route this to the 3-way merge resolver instead of silently wiping the layout. */
 export class LayoutConflictError extends Error {
   constructor(public readonly conflictedText: string) {
-    super('dddbml: layout sidecar contains unresolved git conflict markers');
+    super('DBML Extension: layout sidecar contains unresolved git conflict markers');
     this.name = 'LayoutConflictError';
   }
 }

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "edgeRouting": 2,
+  "tables": {
+    "catalog.books": { "x": 832, "y": 608 },
+    "catalog.copies": { "x": 544, "y": 768 },
+    "catalog.subjects": { "x": 1168, "y": 608 },
+    "circulation.loans": { "x": -464, "y": 464 },
+    "circulation.reservations": { "x": -112, "y": 560 },
+    "public.member_profiles": { "x": 720, "y": 272 },
+    "public.members": { "x": 160, "y": 144 },
+    "reporting.loan_totals": { "x": -816, "y": 464 }
+  },
+  "groups": {
+  },
+  "edges": {
+    "catalog.books::id|catalog.copies::book_id": { "sourceSide": "bottom", "sourcePort": 0.4008809156378601, "targetSide": "right", "targetPort": 0.812919921875 },
+    "circulation.loans::book_id,copy_number|catalog.copies::book_id,copy_number": { "sourceSide": "bottom", "sourcePort": 0.573523743947347 },
+    "circulation.loans::id|catalog.subjects::id": { "targetSide": "top", "targetPort": 0.5309585571289063 },
+    "circulation.reservations::member_id|public.members::id": { "sourceSide": "right", "sourcePort": 0.2826167515345982, "targetSide": "bottom", "targetPort": 0.45901946403719635 },
+    "public.members::id|circulation.loans::member_id": { "sourceSide": "left", "sourcePort": 0.34658006940569197, "targetSide": "top", "targetPort": 0.7036329905192057 },
+    "public.members::id|public.member_profiles::member_id": { "sourceSide": "bottom", "sourcePort": 0.5809479377530364 }
+  },
+  "labels": {
+    "note:reading_guide": { "x": -544, "y": -176, "font": "Georgia", "fontSize": 18 },
+    "project:note": { "x": -544, "y": -224 },
+    "project:title": { "x": -544, "y": -288 }
+  }
+}

@@ -203,8 +203,17 @@ in the GitHub rules for `main` to block merges while validation is pending or
 failing.
 
 Updates to `main` repeat those checks and publish a GitHub release with the
-validated VSIX for a new version in `package.json`. Bump that version for each
-release. Existing releases stay available on GitHub.
+validated VSIX for a new version in `package.json`. The workflow publishes the
+same release asset to the VS Code Marketplace and skips versions already
+published there. Bump the version in `package.json` for each release.
+
+Before the first Marketplace release, sign in to
+[Manage Publishers & Extensions](https://marketplace.visualstudio.com/manage)
+and create the publisher with ID `janar153` if you don't already own it. Under
+**Trusted Publishing**, create a policy with repository owner `janar153`,
+repository `dbml-extension`, workflow `extension.yml`, and an empty environment
+field. GitHub Actions authenticates with OIDC and needs no Marketplace secret.
+See the [Trusted Publishing guide](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#publish-with-github-actions-and-trusted-publishing).
 
 Whenever you set or change the extension version in `package.json`, run
 `pnpm run package` and verify the resulting

@@ -76,3 +76,34 @@ jobs:
           fi
           gh release create "$tag" "release/dbml-extension-${VERSION}.vsix" \
             --target "$GITHUB_SHA" --title "DBML Extension ${VERSION}" --generate-notes
+
+  marketplace:
+    name: Publish to VS Code Marketplace
+    needs: [validate, release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: extension-marketplace-${{ needs.validate.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: pnpm/action-setup@v6.1.1
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Publish the GitHub release VSIX
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          archive="dbml-extension-${VERSION}.vsix"
+          gh release download "v${VERSION}" --pattern "$archive" --dir release
+          pnpm exec vsce publish --oidc --skip-duplicate --packagePath "release/$archive"

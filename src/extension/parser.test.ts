@@ -1,4 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { parseDbml, RECORDS_ROW_CAP } from './parser';
 
 function parse(src: string) {
@@ -6,6 +9,47 @@ function parse(src: string) {
   if (!r.schema) throw new Error(r.error.message);
   return r.schema;
 }
+
+describe('DBML project modules', () => {
+  it('renders imports, re-exports and relationships with the official project compiler', () => {
+    const root = mkdtempSync(join(tmpdir(), 'dbml-project-'));
+    try {
+      const entry = join(root, 'main.dbml');
+      const schemaFile = join(root, 'schema.dbml');
+      const publicModule = join(root, 'public.dbml');
+      writeFileSync(schemaFile, 'Table users { id int [pk] }\nTable internal { id int }');
+      writeFileSync(publicModule, "reuse { table users } from './schema'");
+      const source = "use * from './public'\nTable posts { user_id int [ref: > users.id] }";
+      const result = parseDbml(source, { entry, root });
+      expect(result.error).toBeNull();
+      expect(result.schema?.tables.map((table) => table.name)).toEqual(['public.posts', 'public.users']);
+      expect(result.schema?.refs).toHaveLength(1);
+      expect(result.dependencies?.sort()).toEqual([publicModule, schemaFile]);
+
+      rmSync(schemaFile);
+      const missing = parseDbml(source, { entry, root });
+      expect(missing.error).not.toBeNull();
+      expect(missing.dependencies).toContain(schemaFile);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('does not resolve sources outside the project, including symlink targets', () => {
+    const root = mkdtempSync(join(tmpdir(), 'dbml-project-'));
+    const outside = mkdtempSync(join(tmpdir(), 'dbml-outside-'));
+    try {
+      const source = join(outside, 'external.dbml');
+      writeFileSync(source, 'Table external { id int }');
+      symlinkSync(source, join(root, 'external.dbml'), 'file');
+      const result = parseDbml("use * from './external'", { entry: join(root, 'main.dbml'), root });
+      expect(result.schema).toBeNull();
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+});
 
 describe('parseDbml — TableGroup membership', () => {
   it('assigns groupName to schema-qualified tables whose schema is exported before public', () => {

@@ -8,7 +8,7 @@ import { findColumnLocation, findTableLine, findTableDeclarationRanges } from '.
 export function runParseJob(job: ParseJob): ParseReply {
   const id = job.id;
   switch (job.op) {
-    case 'parse': return { id, op: 'parse', value: parseDbml(job.source) };
+    case 'parse': return { id, op: 'parse', value: parseDbml(job.source, job.project) };
     case 'postgresSql': {
       try {
         return { id, op: 'postgresSql', value: { ok: true, sql: generatePostgresSql(job.source) } };

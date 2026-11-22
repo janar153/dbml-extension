@@ -2,6 +2,18 @@
 
 ## Fuente
 
+El editor registra la gramática TextMate, la configuración de edición y los
+snippets de DBML. La gramática colorea las construcciones del lenguaje sin
+validarlas. La validación y el modelo para el diagrama usan `@dbml/core`.
+
+Para el diagrama en vivo de un archivo local en un entorno de confianza, el
+worker usa `Parser.parseDbmlProject` y resuelve `use` y `reuse` con el compilador.
+Lee solamente los archivos requeridos dentro de la carpeta del workspace
+correspondiente, o dentro del directorio del archivo principal si no hay
+workspace. Los cambios, altas y bajas de las dependencias disparan el mismo
+flujo de recarga que el archivo principal. Las vistas de Git, las ediciones
+asistidas y la exportación SQL conservan la entrada de un solo archivo.
+
 `@dbml/core` **^12.1** (antes 3.14; el bump es requisito de `Dep`, ver spec 18) expone `Parser.parse(source, 'dbmlv2')` → retorna un objeto `Database` (clase). Llamando `.export()` obtenemos un shape plano JSON-safe con la estructura:
 
 ```

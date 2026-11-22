@@ -45,7 +45,7 @@ interface HistoryEntry {
 
 /** Same as the webview history capacity (spec 11): older entries can no longer be asked for. */
 const HISTORY_CAP = 200;
-export const AUTO_SAVE_DISMISSED_KEY = 'dddbml.autoSaveWarningDismissed';
+export const AUTO_SAVE_DISMISSED_KEY = 'dbml-extension.autoSaveWarningDismissed';
 /** Once per extension-host session, keyed by the extension's memento. */
 const autoSaveWarned = new WeakSet<vscode.Memento>();
 
@@ -151,13 +151,13 @@ export class SchemaEditor {
       const loc = await parseRequest({ op: 'locateColumn', source, table: c.table, column: c.column }, `locate:${this.host.uri.toString()}`);
       if (loc === undefined) return;
       if (loc === null) {
-        void vscode.window.showWarningMessage(`dddbml: could not find "${c.table}.${c.column}" in source.`);
+        void vscode.window.showWarningMessage(`DBML Extension: could not find "${c.table}.${c.column}" in source.`);
         return;
       }
       const pos = new vscode.Position(loc.line, loc.character);
       await vscode.window.showTextDocument(this.host.uri, { viewColumn: vscode.ViewColumn.One, preserveFocus: false, selection: new vscode.Range(pos, pos) });
     } catch (err) {
-      void vscode.window.showErrorMessage(`dddbml: reveal failed — ${errorText(err)}`);
+      void vscode.window.showErrorMessage(`DBML Extension: reveal failed — ${errorText(err)}`);
     }
   }
 
@@ -172,7 +172,7 @@ export class SchemaEditor {
   private serialize(work: () => Promise<void>): Promise<void> {
     const run = this.queue.then(work);
     this.queue = run.catch((err: unknown) => {
-      void vscode.window.showErrorMessage(`dddbml: the .dbml edit failed — ${errorText(err)}`);
+      void vscode.window.showErrorMessage(`DBML Extension: the .dbml edit failed — ${errorText(err)}`);
     });
     return this.queue;
   }
@@ -184,7 +184,7 @@ export class SchemaEditor {
     const result = await parseRequest({ op: 'schemaEdit', source, intent }, `edit:${this.host.uri.toString()}`);
     if (result === undefined) return null;
     if (!result.ok) {
-      void vscode.window.showWarningMessage(`dddbml: ${action} refused — ${result.reason}.`);
+      void vscode.window.showWarningMessage(`DBML Extension: ${action} refused — ${result.reason}.`);
       return null;
     }
     return { doc, version, source, result };
@@ -217,17 +217,17 @@ export class SchemaEditor {
       // A merge or a git peek may have locked the canvas while the worker computed (seconds on 5000 tables).
       if (this.host.refuseWhileReadOnly(action)) return null;
       if (confirmed && confirmed.join('\n') !== c.result.cascade.join('\n')) {
-        void vscode.window.showWarningMessage(`dddbml: ${c.result.label} was not applied — the .dbml changed while you confirmed; try again.`);
+        void vscode.window.showWarningMessage(`DBML Extension: ${c.result.label} was not applied — the .dbml changed while you confirmed; try again.`);
         return null;
       }
       hooks.beforeApply?.(c.result);
       if (c.doc.version !== c.version) continue;
       if (!(await this.applyOffsetEdits(c.doc, c.result.edits))) {
-        void vscode.window.showWarningMessage(`dddbml: ${c.result.label} was not applied — VS Code rejected the edit.`);
+        void vscode.window.showWarningMessage(`DBML Extension: ${c.result.label} was not applied — VS Code rejected the edit.`);
         return null;
       }
       if (!(await c.doc.save())) {
-        void vscode.window.showWarningMessage(`dddbml: ${c.result.label} is in the editor but was not saved; the diagram updates when the file is saved.`);
+        void vscode.window.showWarningMessage(`DBML Extension: ${c.result.label} is in the editor but was not saved; the diagram updates when the file is saved.`);
       }
       this.maybeWarnAutoSave();
       return c;
@@ -237,7 +237,7 @@ export class SchemaEditor {
   }
 
   private warnChanging(action: string): void {
-    void vscode.window.showWarningMessage(`dddbml: ${action} was not applied — the .dbml kept changing; try again.`);
+    void vscode.window.showWarningMessage(`DBML Extension: ${action} was not applied — the .dbml kept changing; try again.`);
   }
 
   private applyOffsetEdits(doc: vscode.TextDocument, edits: readonly OffsetEdit[]): Thenable<boolean> {
@@ -291,12 +291,12 @@ export class SchemaEditor {
     }
     const before = doc.getText();
     if (textHash(before) !== entry.textHash) {
-      void vscode.window.showWarningMessage(`dddbml: the .dbml changed since "${entry.label}"; use ${action} in the editor.`);
+      void vscode.window.showWarningMessage(`DBML Extension: the .dbml changed since "${entry.label}"; use ${action} in the editor.`);
       this.discard(id);
       return;
     }
     if (!(await this.applyOffsetEdits(doc, entry.pending))) {
-      void vscode.window.showWarningMessage(`dddbml: ${action} of "${entry.label}" was not applied — VS Code rejected the edit.`);
+      void vscode.window.showWarningMessage(`DBML Extension: ${action} of "${entry.label}" was not applied — VS Code rejected the edit.`);
       this.discard(id);
       return;
     }
@@ -317,7 +317,7 @@ export class SchemaEditor {
 
   private async confirmDelete(r: Applicable): Promise<boolean> {
     const detail = r.cascade.length > 0 ? `This also removes:\n${r.cascade.map((c) => `• ${c}`).join('\n')}` : undefined;
-    const choice = await vscode.window.showWarningMessage(`dddbml: ${r.label}?`, { modal: true, detail }, 'Delete');
+    const choice = await vscode.window.showWarningMessage(`DBML Extension: ${r.label}?`, { modal: true, detail }, 'Delete');
     return choice === 'Delete';
   }
 
@@ -328,7 +328,7 @@ export class SchemaEditor {
     if (vscode.workspace.getConfiguration('files').get<string>('autoSave') !== 'off') return;
     autoSaveWarned.add(memento);
     void vscode.window.showWarningMessage(
-      'dddbml writes your .dbml from the diagram; enable Auto Save to keep both in sync.',
+      'DBML Extension writes your .dbml from the diagram; enable Auto Save to keep both in sync.',
       'Enable Auto Save',
       "Don't show again",
     ).then((choice) => {

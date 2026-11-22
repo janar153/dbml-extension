@@ -1,5 +1,6 @@
 import { mapArchitecture } from './architectureParser';
 import { Parser } from '@dbml/core';
+import { projectParser, type DbmlProject } from './dbmlProject';
 import {
   DEFAULT_LABEL_FONT, DEFAULT_LABEL_SIZE, isLabelCoordinate, isLabelFont, isLabelSize, type DiagramLabel,
 } from '../shared/diagramLabels';
@@ -32,9 +33,14 @@ export const RECORDS_ROW_CAP = 200;
  * Input: DBML source string.
  * Output: internal Schema (plain-data, postMessage-safe) or ParseError.
  */
-export function parseDbml(source: string): { schema: Schema; error: null } | { schema: null; error: ParseError } {
+type ParseOutcome = { schema: Schema; error: null } | { schema: null; error: ParseError };
+
+export function parseDbml(source: string, project?: DbmlProject): ParseOutcome & { dependencies?: string[] } {
+  const dependencies = new Set<string>();
   try {
-    const db = Parser.parse(source, 'dbmlv2');
+    const db = project
+      ? projectParser(source, project, dependencies).parseDbmlProject(project.entry)
+      : Parser.parse(source, 'dbmlv2');
     const exported = db.export() as unknown as ExportedDatabase;
     const schema = mapExportedToSchema(exported);
     const architecture = mapArchitecture(db);
@@ -42,9 +48,9 @@ export function parseDbml(source: string): { schema: Schema; error: null } | { s
     const model = db as unknown as DatabaseAnnotations;
     if (model.name) schema.project = mapProject(source, model.name, model);
     if (model.diagramViews?.length) schema.diagramViews = model.diagramViews.map((v) => mapDiagramView(source, v));
-    return { schema, error: null };
+    return { schema, error: null, ...(project && { dependencies: [...dependencies] }) };
   } catch (err) {
-    return { schema: null, error: toParseError(err) };
+    return { schema: null, error: toParseError(err), ...(project && { dependencies: [...dependencies] }) };
   }
 }
 

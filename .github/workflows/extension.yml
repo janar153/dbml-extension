@@ -1,0 +1,78 @@
+name: DBML Extension
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate extension
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: pnpm/action-setup@v6
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Generate test fixtures
+        run: pnpm run test:gen
+      - name: Type check
+        run: pnpm run typecheck
+      - name: Run tests
+        run: pnpm test
+      - name: Build and verify the VSIX
+        id: package
+        run: |
+          pnpm run package
+          version=$(node -p "require('./package.json').version")
+          archive="packages/dbml-extension-${version}.vsix"
+          unzip -t "$archive"
+          printf 'version=%s\narchive=%s\n' "$version" "$archive" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: github.event_name == 'push'
+        with:
+          name: extension-vsix
+          path: ${{ steps.package.outputs.archive }}
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    if: github.event_name == 'push'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    concurrency:
+      group: extension-release-${{ needs.validate.outputs.version }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: extension-vsix
+          path: release
+      - name: Release the version from package.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          tag="v${VERSION}"
+          if gh release view "$tag" > /dev/null 2>&1; then
+            echo "Release $tag already exists. Bump package.json to publish another version."
+            exit 0
+          fi
+          gh release create "$tag" "release/dbml-extension-${VERSION}.vsix" \
+            --target "$GITHUB_SHA" --title "DBML Extension ${VERSION}" --generate-notes

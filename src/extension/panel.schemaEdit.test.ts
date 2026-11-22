@@ -209,7 +209,7 @@ describe('schema:delete', () => {
     await h.web.receive({ type: 'schema:delete', payload: { kind: 'table', table: 'public.a' } });
     await vi.waitFor(() => expect(fake.messages.some((m) => m.modal)).toBe(true));
     const modal = fake.messages.find((m) => m.modal)!;
-    expect(modal.text).toBe('dddbml: Delete table a?');
+    expect(modal.text).toBe('DBML Extension: Delete table a?');
     expect(modal.detail).toContain('reference b.a_id > a.id');
     expect(modal.detail).toContain('membership in TableGroup g');
     await settle(50);

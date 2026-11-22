@@ -1,0 +1,112 @@
+// Synthetic schema for layout regressions involving group boundaries and cross-group references.
+Table accounts { id int [pk] }
+Table sessions {
+  id int [pk]
+  account_id int [ref: > accounts.id]
+}
+Table account_roles {
+  id int [pk]
+  account_id int [ref: > accounts.id]
+}
+Table account_orders {
+  id int [pk]
+  order_id int [ref: > orders.id]
+}
+
+Table products { id int [pk] }
+Table inventory {
+  id int [pk]
+  product_id int [ref: > products.id]
+}
+Table price_history {
+  id int [pk]
+  product_id int [ref: > products.id]
+}
+Table product_revenue {
+  id int [pk]
+  invoice_id int [ref: > invoices.id]
+}
+
+Table orders {
+  id int [pk]
+  account_id int [ref: > accounts.id]
+}
+Table order_items {
+  id int [pk]
+  order_id int [ref: > orders.id]
+  product_id int [ref: > products.id]
+}
+Table order_events {
+  id int [pk]
+  order_id int [ref: > orders.id]
+}
+Table delivery_status {
+  id int [pk]
+  package_id int [ref: > packages.id]
+}
+
+Table invoices {
+  id int [pk]
+  order_id int [ref: > orders.id]
+}
+Table payments {
+  id int [pk]
+  invoice_id int [ref: > invoices.id]
+}
+Table refunds {
+  id int [pk]
+  payment_id int [ref: > payments.id]
+}
+Table account_balances {
+  id int [pk]
+  account_id int [ref: > accounts.id]
+}
+
+Table packages {
+  id int [pk]
+  order_id int [ref: > orders.id]
+}
+Table package_items {
+  id int [pk]
+  package_id int [ref: > packages.id]
+  product_id int [ref: > products.id]
+}
+Table tracking_events {
+  id int [pk]
+  package_id int [ref: > packages.id]
+}
+Table delivery_invoices {
+  id int [pk]
+  invoice_id int [ref: > invoices.id]
+}
+
+TableGroup accounts_context {
+  accounts
+  sessions
+  account_roles
+  account_orders
+}
+TableGroup catalog_context {
+  products
+  inventory
+  price_history
+  product_revenue
+}
+TableGroup orders_context {
+  orders
+  order_items
+  order_events
+  delivery_status
+}
+TableGroup billing_context {
+  invoices
+  payments
+  refunds
+  account_balances
+}
+TableGroup delivery_context {
+  packages
+  package_items
+  tracking_events
+  delivery_invoices
+}

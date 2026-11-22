@@ -1,5 +1,6 @@
 import type { QualifiedName } from '../shared/types';
 import type { parseDbml } from './parser';
+import type { DbmlProject } from './dbmlProject';
 import type { SchemaEditIntent, SchemaEditResult } from './schemaEdits';
 import type { TableDeclarationRange } from './tableLocation';
 
@@ -10,7 +11,7 @@ export type ParseResult = ReturnType<typeof parseDbml>;
  * lookup or edit computed from it (go-to-source, document links, spec 19 schema edits).
  */
 export interface ParseOps {
-  parse: { request: { source: string }; result: ParseResult };
+  parse: { request: { source: string; project?: DbmlProject }; result: ParseResult };
   postgresSql: { request: { source: string }; result: { ok: true; sql: string } | { ok: false; message: string } };
   /** 0-based `Table` declaration line. */
   locate: { request: { source: string; table: QualifiedName }; result: number | null };
@@ -103,8 +104,8 @@ export function createParseClient(spawn: () => WorkerLike): ParseClient {
       settle(job, reply);
       pump();
     });
-    w.on('error', (err) => crash(`dddbml parser worker failed: ${err.message}`));
-    w.on('exit', (code) => crash(`dddbml parser worker exited (code ${code})`));
+    w.on('error', (err) => crash(`DBML Extension parser worker failed: ${err.message}`));
+    w.on('exit', (code) => crash(`DBML Extension parser worker exited (code ${code})`));
     worker = w;
     return w;
   };

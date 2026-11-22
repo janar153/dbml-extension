@@ -4,7 +4,8 @@ import { diagramImageFiles, loadDiagramImages, projectImageUri } from './project
 import { PROJECT_BLOCK_KEY, noteLayoutKey, PROJECT_NOTE_KEY, PROJECT_TITLE_KEY } from '../shared/diagramLabels';
 import type { ExportCommandPayload } from '../shared/exporters/types';
 import type { AutoArrangeMode, FlatSettingsPatch, HostToWebview, Layout, ParseError, QualifiedName, Ref, Schema, ViewportCommand, ViewportLayout, WebviewToHost } from '../shared/types';
-import { locateTableAsync, parseAsync } from './parseService';
+import { locateTableAsync, parseAsync, parseRequest } from './parseService';
+import { basename, dirname } from 'node:path';
 import { emptyLayout, LayoutConflictError, LayoutParseError, mergeLayout, migrateInlineLabelLayout, parseLayout, readLayout, readSidecarText, serializeSharedLayout, sidecarUri, writeSharedLayout } from './layoutStore';
 import { applyViewState, emptyViewState, extractViewState, mergeViewStateChange, readViewState, sameViewState, writeViewState, type ViewState } from './viewStateStore';
 import { applyDecisions, countKeys, detectSidecarConflict, toSerializableConflicts } from './mergeResolver';
@@ -21,7 +22,7 @@ const PERSIST_DEBOUNCE_MS = 200;
 const SCHEMA_DEBOUNCE_MS = 150;
 /** Each git status spawns 2-3 processes; a drag+save burst used to spawn ~6 of them. */
 const GIT_STATUS_DEBOUNCE_MS = 200;
-const DESIGN_VS_DATA_DOC_URL = 'https://github.com/TWulfZ/dddbml#design-vs-data';
+const DESIGN_VS_DATA_DOC_URL = 'https://github.com/janar153/dbml-extension#design-vs-data';
 
 const MERGE_UNREADABLE = 'The layout file has git conflict markers, but the conflict could not be read from git. Resolve the markers in the layout file manually; layout changes are not saved until then.';
 
@@ -78,6 +79,7 @@ export class DiagramPanel {
   /** Tables already told that the layout color overrides their DBML headercolor (once per session). */
   private readonly headerColorNotified = new Set<QualifiedName>();
   private readonly disposables: vscode.Disposable[] = [];
+  private readonly moduleWatchers = new Map<string, vscode.FileSystemWatcher>();
   private schemaSendId = 0;
   private lastValidSchema: Schema = { tables: [], refs: [], groups: [] };
   private lastValidDbmlSource?: string;
@@ -145,8 +147,8 @@ export class DiagramPanel {
   ) {
     const distRoot = vscode.Uri.joinPath(context.extensionUri, 'dist', 'webview');
     this.webviewPanel = vscode.window.createWebviewPanel(
-      'dddbml.diagram',
-      `dddbml — ${this.shortName(dbmlUri)}`,
+      'dbml-extension.diagram',
+      `DBML Extension — ${this.shortName(dbmlUri)}`,
       { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
       {
         enableScripts: true,
@@ -244,16 +246,16 @@ export class DiagramPanel {
     // "Orphan" is judged against the schema: with no current parse (or no layout loaded yet) every
     // entry looks orphaned and the whole sidecar — positions and colours — would be wiped.
     if (!this.layoutLoaded || !this.lastParseOk) {
-      void vscode.window.showWarningMessage('dddbml: fix the .dbml so it parses before pruning orphan layout entries.');
+      void vscode.window.showWarningMessage('DBML Extension: fix the .dbml so it parses before pruning orphan layout entries.');
       return;
     }
     const preview = this.computePrune();
     if (preview.removedTables === 0 && preview.removedGroups === 0 && preview.removedLabels === 0) {
-      void vscode.window.showInformationMessage('dddbml: no orphan layout entries to prune.');
+      void vscode.window.showInformationMessage('DBML Extension: no orphan layout entries to prune.');
       return;
     }
     const answer = await vscode.window.showWarningMessage(
-      `dddbml: remove ${preview.removedTables} orphan table(s), ${preview.removedGroups} orphan group(s), and ${preview.removedLabels} orphan label(s) from the layout file? This cannot be undone.`,
+      `DBML Extension: remove ${preview.removedTables} orphan table(s), ${preview.removedGroups} orphan group(s), and ${preview.removedLabels} orphan label(s) from the layout file? This cannot be undone.`,
       { modal: true },
       'Prune',
     );
@@ -264,7 +266,7 @@ export class DiagramPanel {
     this.cancelPendingPersist();
     await this.flushPersist(this.currentLayout);
     this.post({ type: 'layout:loaded', payload: this.currentLayout });
-    void vscode.window.showInformationMessage(`dddbml: pruned ${removedTables} orphan table(s), ${removedGroups} orphan group(s), and ${removedLabels} orphan label(s).`);
+    void vscode.window.showInformationMessage(`DBML Extension: pruned ${removedTables} orphan table(s), ${removedGroups} orphan group(s), and ${removedLabels} orphan label(s).`);
   }
 
   /** Host half of the read-only gate: the webview's own gate does not survive a reload, a timer set
@@ -278,7 +280,7 @@ export class DiagramPanel {
     const reason = this.readOnly;
     if (!reason) return false;
     const fix = reason === 'merge' ? 'resolve the layout merge first' : 'exit the read-only git view first';
-    void vscode.window.showWarningMessage(`dddbml: ${action} is unavailable — ${fix}.`);
+    void vscode.window.showWarningMessage(`DBML Extension: ${action} is unavailable — ${fix}.`);
     return true;
   }
 
@@ -321,6 +323,7 @@ export class DiagramPanel {
     void this.flushPendingPersistNow();
     if (this.schemaTimer) clearTimeout(this.schemaTimer);
     if (this.gitStatusTimer) clearTimeout(this.gitStatusTimer);
+    this.watchModules([]);
     while (this.disposables.length) {
       const d = this.disposables.pop();
       try { d?.dispose(); } catch { /* noop */ }
@@ -417,7 +420,7 @@ export class DiagramPanel {
         void this.serializeOverlay(() => this.leaveOverlay('git:diff:exit'));
         return;
       case 'error:log':
-        console.error('[dddbml webview]', msg.payload.message, msg.payload.stack);
+        console.error('[dbml-extension webview]', msg.payload.message, msg.payload.stack);
         return;
       case 'schema:editLabel':
         void this.schemaEditor.editLabel(msg.payload);
@@ -451,7 +454,7 @@ export class DiagramPanel {
   private async runExport(payload: ExportCommandPayload): Promise<void> {
     const exporter = getExporter(payload.formatId);
     if (!exporter) {
-      void vscode.window.showErrorMessage(`dddbml: unknown export format "${payload.formatId}".`);
+      void vscode.window.showErrorMessage(`DBML Extension: unknown export format "${payload.formatId}".`);
       this.post({ type: 'export:result', payload: { ok: false, message: 'unknown format' } });
       return;
     }
@@ -466,8 +469,8 @@ export class DiagramPanel {
 
     if (filtered.tables.length === 0 && !exporter.fullSchemaOnly) {
       const message = scope === 'selected'
-        ? 'dddbml: nothing to export — selection is empty.'
-        : 'dddbml: nothing to export — schema has no tables.';
+        ? 'DBML Extension: nothing to export — selection is empty.'
+        : 'DBML Extension: nothing to export — schema has no tables.';
       void vscode.window.showWarningMessage(message);
       this.post({ type: 'export:result', payload: { ok: false, message } });
       return;
@@ -494,7 +497,7 @@ export class DiagramPanel {
           return;
         }
         await vscode.workspace.fs.writeFile(target, Buffer.from(result.content, 'utf8'));
-        void vscode.window.showInformationMessage(`dddbml: saved ${this.shortName(target)}.`);
+        void vscode.window.showInformationMessage(`DBML Extension: saved ${this.shortName(target)}.`);
       } else {
         const doc = await vscode.workspace.openTextDocument({
           content: result.content,
@@ -506,13 +509,13 @@ export class DiagramPanel {
       if (result.warnings && result.warnings.length > 0) {
         const head = result.warnings.slice(0, 3).join('\n');
         const more = result.warnings.length > 3 ? `\n…and ${result.warnings.length - 3} more.` : '';
-        void vscode.window.showInformationMessage(`dddbml export warnings:\n${head}${more}`);
+        void vscode.window.showInformationMessage(`DBML Extension export warnings:\n${head}${more}`);
       }
 
       this.post({ type: 'export:result', payload: { ok: true, warnings: result.warnings } });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      void vscode.window.showErrorMessage(`dddbml: export failed — ${message}`);
+      void vscode.window.showErrorMessage(`DBML Extension: export failed — ${message}`);
       this.post({ type: 'export:result', payload: { ok: false, message } });
     }
   }
@@ -540,10 +543,10 @@ export class DiagramPanel {
       const reduced = payload.reducedScale !== undefined
         ? ` at ${payload.reducedScale}× (reduced: too large for the requested scale; use SVG for full resolution)`
         : '';
-      void vscode.window.showInformationMessage(`dddbml: image saved${reduced} — ${this.shortName(target)}.`);
+      void vscode.window.showInformationMessage(`DBML Extension: image saved${reduced} — ${this.shortName(target)}.`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      void vscode.window.showErrorMessage(`dddbml: image export failed — ${message}`);
+      void vscode.window.showErrorMessage(`DBML Extension: image export failed — ${message}`);
       this.post({ type: 'image:result', payload: { ok: false, message } });
     }
   }
@@ -556,7 +559,7 @@ export class DiagramPanel {
       const lineIdx = await locateTableAsync(source, qualifiedName, `locate:${this.dbmlUri.toString()}`);
       if (lineIdx === undefined) return; // a newer double-click superseded this one
       if (lineIdx === null) {
-        void vscode.window.showWarningMessage(`dddbml: could not find "${qualifiedName}" in source.`);
+        void vscode.window.showWarningMessage(`DBML Extension: could not find "${qualifiedName}" in source.`);
         return;
       }
       const pos = new vscode.Position(lineIdx, 0);
@@ -567,13 +570,13 @@ export class DiagramPanel {
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      void vscode.window.showErrorMessage(`dddbml: reveal failed — ${message}`);
+      void vscode.window.showErrorMessage(`DBML Extension: reveal failed — ${message}`);
     }
   }
 
   private serializeOverlay(work: () => Promise<void>): Promise<void> {
     const run = this.overlayQueue.then(work);
-    this.overlayQueue = run.catch((err: unknown) => console.error('[dddbml] git overlay transition failed', err));
+    this.overlayQueue = run.catch((err: unknown) => console.error('[dbml-extension] git overlay transition failed', err));
     return run;
   }
 
@@ -618,7 +621,18 @@ export class DiagramPanel {
     try {
       const bytes = await vscode.workspace.fs.readFile(this.dbmlUri);
       const source = new TextDecoder('utf-8').decode(bytes);
-      const result = await parseAsync(source, `live:${this.dbmlUri.toString()}`);
+      const channel = `live:${this.dbmlUri.toString()}`;
+      const entry = this.dbmlUri.scheme === 'file' && vscode.workspace.isTrusted ? this.dbmlUri.fsPath : undefined;
+      const result = entry
+        ? (await parseRequest({
+          op: 'parse',
+          source,
+          project: {
+            entry,
+            root: vscode.workspace.getWorkspaceFolder(this.dbmlUri)?.uri.fsPath ?? dirname(entry),
+          },
+        }, channel)) ?? null
+        : await parseAsync(source, channel);
       const hydrated = result?.schema && diagramImageFiles(result.schema).length
         ? await loadDiagramImages(this.dbmlUri, result.schema)
         : result?.schema;
@@ -634,6 +648,7 @@ export class DiagramPanel {
         return this.sendSchema(opts);
       }
       if (this.disposed) return;
+      this.watchModules(result.dependencies ?? []);
       if (result.error) {
         this.lastParseOk = false;
         payload = { schema: this.lastValidSchema, parseError: result.error };
@@ -741,7 +756,7 @@ export class DiagramPanel {
         this.diskSharedSerialized = null;
         this.sidecarCorrupt = true;
         void vscode.window.showWarningMessage(
-          'dddbml: the layout file is not valid JSON — fix it (or restore it from git) to save layout changes. The diagram is read from the last good layout meanwhile.',
+          'DBML Extension: the layout file is not valid JSON — fix it (or restore it from git) to save layout changes. The diagram is read from the last good layout meanwhile.',
         );
         return this.currentLayout;
       }
@@ -776,7 +791,7 @@ export class DiagramPanel {
       try { await gitAdd(repoRoot, relpath); } catch { /* staging is best-effort */ }
       this.pendingMerge = null;
       void vscode.window.showInformationMessage(
-        `dddbml: layout auto-merged cleanly — ${countKeys(merged)} item(s), no conflicts.`,
+        `DBML Extension: layout auto-merged cleanly — ${countKeys(merged)} item(s), no conflicts.`,
       );
       return merged;
     }
@@ -802,7 +817,7 @@ export class DiagramPanel {
     const sig = JSON.stringify({ conflicts, error });
     if (sig === this.lastPostedMergeSig) return; // identical set already on screen — keep the user's picks
     if (this.lastPostedMergeSig !== null) {
-      void vscode.window.showWarningMessage('dddbml: the layout changed on disk — the conflict list was refreshed.');
+      void vscode.window.showWarningMessage('DBML Extension: the layout changed on disk — the conflict list was refreshed.');
     }
     this.lastPostedMergeSig = sig;
     this.gitOverlay = null; // beginMerge drops the webview out of any git view
@@ -828,7 +843,7 @@ export class DiagramPanel {
         await this.writeShared(resolved);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        void vscode.window.showErrorMessage(`dddbml: failed to write resolved layout — ${message}`);
+        void vscode.window.showErrorMessage(`DBML Extension: failed to write resolved layout — ${message}`);
         // The file keeps its markers and pendingMerge is intact; the user's picks must survive the retry (F73).
         this.post({ type: 'merge:applyFailed' });
         return;
@@ -845,7 +860,7 @@ export class DiagramPanel {
       this.post({ type: 'layout:loaded', payload: this.currentLayout });
       this.post({ type: 'merge:done' });
       void vscode.window.showInformationMessage(
-        `dddbml: layout merged — ${auto} auto-resolved, ${chosen} chosen by you.`,
+        `DBML Extension: layout merged — ${auto} auto-resolved, ${chosen} chosen by you.`,
       );
     } finally {
       this.mergeResolving = false;
@@ -904,11 +919,11 @@ export class DiagramPanel {
     try {
       await gitCommit(scope.repoRoot, dirty, trimmed);
       this.post({ type: 'git:commitResult', payload: { ok: true } });
-      void vscode.window.showInformationMessage(`dddbml: committed ${dirty.length} diagram file(s).`);
+      void vscode.window.showInformationMessage(`DBML Extension: committed ${dirty.length} diagram file(s).`);
     } catch (err) {
       const m = err instanceof Error ? err.message : String(err);
       this.post({ type: 'git:commitResult', payload: { ok: false, message: m } });
-      void vscode.window.showErrorMessage(`dddbml: commit failed — ${m}`);
+      void vscode.window.showErrorMessage(`DBML Extension: commit failed — ${m}`);
     }
     await this.sendGitStatus();
   }
@@ -959,11 +974,11 @@ export class DiagramPanel {
       await gitUnstageNew(scope.repoRoot, stagedNew);
       await this.reloadFromDisk();
       this.postOpResult('restore', true);
-      void vscode.window.showInformationMessage(`dddbml: reverted ${count} diagram file(s) to HEAD.`);
+      void vscode.window.showInformationMessage(`DBML Extension: reverted ${count} diagram file(s) to HEAD.`);
     } catch (err) {
       const m = err instanceof Error ? err.message : String(err);
       this.postOpResult('restore', false, m);
-      void vscode.window.showErrorMessage(`dddbml: revert failed — ${m}`);
+      void vscode.window.showErrorMessage(`DBML Extension: revert failed — ${m}`);
     }
   }
 
@@ -983,11 +998,11 @@ export class DiagramPanel {
       await this.reloadFromDisk();
       await this.sendStashes();
       this.postOpResult('stashPush', true);
-      void vscode.window.showInformationMessage('dddbml: diagram changes stashed.');
+      void vscode.window.showInformationMessage('DBML Extension: diagram changes stashed.');
     } catch (err) {
       const m = err instanceof Error ? err.message : String(err);
       this.postOpResult('stashPush', false, m);
-      void vscode.window.showErrorMessage(`dddbml: stash failed — ${m}`);
+      void vscode.window.showErrorMessage(`DBML Extension: stash failed — ${m}`);
     }
   }
 
@@ -1010,12 +1025,12 @@ export class DiagramPanel {
         await this.reloadFromDisk();
         await this.sendStashes();
         this.postOpResult(op, true, 'Applied with conflicts');
-        void vscode.window.showInformationMessage('dddbml: the stash was applied with conflicts — resolve them; the stash is kept until then.');
+        void vscode.window.showInformationMessage('DBML Extension: the stash was applied with conflicts — resolve them; the stash is kept until then.');
         return;
       }
       const m = err instanceof Error ? err.message : String(err);
       this.postOpResult(op, false, m);
-      void vscode.window.showErrorMessage(`dddbml: stash ${op === 'stashPop' ? 'pop' : 'apply'} failed — ${m}`);
+      void vscode.window.showErrorMessage(`DBML Extension: stash ${op === 'stashPop' ? 'pop' : 'apply'} failed — ${m}`);
     }
   }
 
@@ -1026,7 +1041,7 @@ export class DiagramPanel {
   private async mergeBlocksGitWrite(scope: { repoRoot: string; relpaths: string[] }): Promise<string | null> {
     if (this.readOnly !== 'merge' && !(await this.hasUnmergedDiagramFiles(scope))) return null;
     const message = 'Resolve the layout merge first';
-    void vscode.window.showWarningMessage(`dddbml: ${message.toLowerCase()} — git operations on the diagram files are blocked while it is pending.`);
+    void vscode.window.showWarningMessage(`DBML Extension: ${message.toLowerCase()} — git operations on the diagram files are blocked while it is pending.`);
     return message;
   }
 
@@ -1058,14 +1073,14 @@ export class DiagramPanel {
     if (!scope) return; // not a repo — the UI gates this, so just ignore
     const dbmlSrc = await showBlob(scope.repoRoot, sha, scope.dbmlRel);
     if (dbmlSrc == null) {
-      void vscode.window.showWarningMessage('dddbml: could not read that revision of the diagram.');
+      void vscode.window.showWarningMessage('DBML Extension: could not read that revision of the diagram.');
       return;
     }
     const parsed = await parseAsync(dbmlSrc, `revision:${this.dbmlUri.toString()}`);
     if (!parsed || this.disposed) return; // a newer peek superseded this one
     if (parsed.error) {
       // Substituting today's schema under the old label would silently show the wrong tables.
-      void vscode.window.showWarningMessage(`dddbml: the diagram at ${label} does not parse — ${parsed.error.message}`);
+      void vscode.window.showWarningMessage(`DBML Extension: the diagram at ${label} does not parse — ${parsed.error.message}`);
       return;
     }
     const schema = parsed.schema;
@@ -1146,14 +1161,14 @@ export class DiagramPanel {
 
   private async computeDiff(): Promise<DiffPayload | null> {
     const scope = await this.diagramScope();
-    if (!scope) { void vscode.window.showWarningMessage('dddbml: not a git repository.'); return null; }
+    if (!scope) { void vscode.window.showWarningMessage('DBML Extension: not a git repository.'); return null; }
     const baseDbml = await showBlob(scope.repoRoot, 'HEAD', scope.dbmlRel);
-    if (baseDbml == null) { void vscode.window.showWarningMessage('dddbml: the diagram has no committed version at HEAD yet.'); return null; }
+    if (baseDbml == null) { void vscode.window.showWarningMessage('DBML Extension: the diagram has no committed version at HEAD yet.'); return null; }
     const parsedBase = await parseAsync(baseDbml, `diffBase:${this.dbmlUri.toString()}`);
     if (!parsedBase) return null;
     if (parsedBase.error) {
       // An empty base would report every table as "added" — a false diff, not a degraded one.
-      void vscode.window.showWarningMessage(`dddbml: the diagram at HEAD does not parse — ${parsedBase.error.message}`);
+      void vscode.window.showWarningMessage(`DBML Extension: the diagram at HEAD does not parse — ${parsedBase.error.message}`);
       return null;
     }
     // Re-read rather than trust lastValidSchema: it is stale (or the empty sentinel) while the file
@@ -1163,22 +1178,22 @@ export class DiagramPanel {
       headSource = new TextDecoder('utf-8').decode(await vscode.workspace.fs.readFile(this.dbmlUri));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      void vscode.window.showWarningMessage(`dddbml: could not read the working diagram — ${message}`);
+      void vscode.window.showWarningMessage(`DBML Extension: could not read the working diagram — ${message}`);
       return null;
     }
     const parsedHead = await parseAsync(headSource, `diffHead:${this.dbmlUri.toString()}`);
     if (!parsedHead) return null;
     if (parsedHead.error) {
-      void vscode.window.showWarningMessage(`dddbml: the working diagram does not parse — ${parsedHead.error.message}`);
+      void vscode.window.showWarningMessage(`DBML Extension: the working diagram does not parse — ${parsedHead.error.message}`);
       return null;
     }
     if (parsedBase.schema.architecture || parsedHead.schema.architecture) {
-      void vscode.window.showInformationMessage('dddbml: use the Git source diff to review architecture changes.');
+      void vscode.window.showInformationMessage('DBML Extension: use the Git source diff to review architecture changes.');
       return null;
     }
     const diff = diffSchemas(parsedBase.schema, parsedHead.schema);
     if (diff.tables.length === 0 && diff.refs.length === 0) {
-      void vscode.window.showInformationMessage('dddbml: no schema changes vs HEAD.');
+      void vscode.window.showInformationMessage('DBML Extension: no schema changes vs HEAD.');
       return null;
     }
     // Enrich removed tables with their base position (from HEAD's sidecar) so the ghost can be placed.
@@ -1196,7 +1211,7 @@ export class DiagramPanel {
   private onLayoutPersist(payload: Partial<Layout>): void {
     const reason = this.readOnly;
     if (reason) {
-      console.warn(`[dddbml] layout:persist dropped: the canvas is read-only (${reason}).`);
+      console.warn(`[dbml-extension] layout:persist dropped: the canvas is read-only (${reason}).`);
       this.webviewDiverged = true;
       return;
     }
@@ -1247,7 +1262,7 @@ export class DiagramPanel {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      void vscode.window.showErrorMessage(`dddbml: failed to write layout file — ${message}`);
+      void vscode.window.showErrorMessage(`DBML Extension: failed to write layout file — ${message}`);
     }
     await this.writeViewStateDelta();
     // Only a real shared-layout write flips the sidecar dirty/clean — refresh the Git panel's status
@@ -1269,11 +1284,31 @@ export class DiagramPanel {
           this.viewStateBaseline = next;
         }
       } catch (err) {
-        console.error('[dddbml] failed to write view-state', err);
+        console.error('[dbml-extension] failed to write view-state', err);
       }
     });
     this.viewStateWrites = write;
     return write;
+  }
+
+  private watchModules(paths: string[]): void {
+    const current = new Set(paths);
+    for (const [path, watcher] of this.moduleWatchers) {
+      if (current.has(path)) continue;
+      watcher.dispose();
+      this.moduleWatchers.delete(path);
+    }
+    for (const path of current) {
+      if (this.moduleWatchers.has(path)) continue;
+      const watcher = vscode.workspace.createFileSystemWatcher(
+        new vscode.RelativePattern(vscode.Uri.file(dirname(path)), globLiteral(basename(path))),
+      );
+      const reload = () => this.scheduleExternalReload(false);
+      watcher.onDidCreate(reload);
+      watcher.onDidChange(reload);
+      watcher.onDidDelete(reload);
+      this.moduleWatchers.set(path, watcher);
+    }
   }
 
   private setupWatchers(): void {
@@ -1385,7 +1420,7 @@ export class DiagramPanel {
     if (this.headerColorNotified.has(table)) return;
     this.headerColorNotified.add(table);
     const choice = await vscode.window.showWarningMessage(
-      `dddbml: "${table}" now uses the layout color instead of the headercolor in ${this.shortName(this.dbmlUri)}. ` +
+      `DBML Extension: "${table}" now uses the layout color instead of the headercolor in ${this.shortName(this.dbmlUri)}. ` +
         'Colors and positions live in the layout file so the .dbml stays data-only.',
       'Learn more',
     );
@@ -1421,7 +1456,7 @@ export class DiagramPanel {
 <meta charset="UTF-8" />
 <meta http-equiv="Content-Security-Policy" content="${csp}" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>dddbml</title>
+<title>DBML Extension</title>
 <link href="${codiconUri}" rel="stylesheet" />
 <style>
   html, body, #root { height: 100%; margin: 0; padding: 0; overflow: hidden; }

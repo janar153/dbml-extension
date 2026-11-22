@@ -7,7 +7,7 @@ import { placeMissingTables } from './placeMissing';
 import { buildArrangeCommand } from '../state/history';
 
 /**
- * `dddbml: Reset Layout` (spec 03, F24). Runs here, not on the host: only the webview can lay
+ * `DBML Extension: Reset Layout` (spec 03, F24). Runs here, not on the host: only the webview can lay
  * tables out, and a host-side `tables: {}` also dropped colors and personal hidden flags. Positions
  * are recomputed exactly as on first open (smartLayout 'all', spec 03 decision 2026-10-01); every
  * edge loses its shape (absolute waypoints would dangle once the tables move) but keeps its color.

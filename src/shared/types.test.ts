@@ -43,12 +43,12 @@ describe('flattenSettings', () => {
 });
 
 describe('numeric setting ranges', () => {
-  it('match the package.json minimum/maximum of every numeric dddbml.* setting', () => {
+  it('match the package.json minimum/maximum of every numeric dbml-extension.* setting', () => {
     const props: Record<string, { type: string; minimum?: number; maximum?: number }> =
       pkg.contributes.configuration.properties;
     const fromPkg: Record<string, [number | undefined, number | undefined]> = {};
     for (const [key, p] of Object.entries(props)) {
-      if (p.type === 'number') fromPkg[key.replace(/^dddbml\./, '')] = [p.minimum, p.maximum];
+      if (p.type === 'number') fromPkg[key.replace(/^dbml-extension\./, '')] = [p.minimum, p.maximum];
     }
     expect(SETTING_RANGES).toEqual(fromPkg);
   });

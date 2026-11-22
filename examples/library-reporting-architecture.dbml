@@ -1,0 +1,35 @@
+---
+diagram_type: architecture
+title: Campus Library reporting pipeline
+---
+Database "Circulation source" as source [type: 'postgres']
+Queue "Loan events" as events
+Pipeline "Nightly rollup" as rollup [color: #507C60, style: dashed]
+Storage "Archived snapshots" as archive
+Database "Reporting mart" as mart [type: 'postgres']
+Server "Dashboard service" as dashboard [icon: 'library-mark.svg']
+Server "Monitoring service" as monitor
+
+Note schedule {
+  'The rollup publishes totals at 02:00 each night.'
+}
+
+Group "Data stores" as stores [label: bottom, stacked] {
+  archive
+  mart
+}
+
+Group "Reporting environment" as reporting {
+  events
+  rollup
+  stores
+  schedule
+  dashboard
+}
+
+Link: source > events [proto: CDC]
+Link: events > rollup [proto: AMQP, style: dashed]
+Link: archive < rollup
+Link: rollup > mart
+Link: dashboard <> mart [proto: SQL]
+Link: monitor - reporting

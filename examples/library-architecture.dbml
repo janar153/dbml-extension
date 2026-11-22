@@ -1,0 +1,18 @@
+---
+diagram_type: arch
+title: Campus Library application
+---
+Internet "Reader browsers" as readers
+Server "Catalogue and circulation API" as api [color: #3D698A]
+Database "Library database" as db {
+  type: 'postgres'
+  Note: 'Stores books, members, and loans.'
+}
+
+Group "Campus deployment" as campus {
+  api
+  db
+}
+
+Link: readers > api [proto: HTTPS, host: 'library.example.test']
+Link: api > db [proto: PostgreSQL]

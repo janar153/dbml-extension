@@ -341,6 +341,8 @@ export const languages = {
 export const FileType = { File: 1, Directory: 2, SymbolicLink: 64 };
 
 export const workspace = {
+  isTrusted: true,
+  getWorkspaceFolder: () => undefined,
   fs: {
     stat: async (uri: Uri) => {
       const stat = await fsp.lstat(uri.fsPath);

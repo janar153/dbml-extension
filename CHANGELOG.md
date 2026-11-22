@@ -2,6 +2,12 @@
 
 [GitHub repository](https://github.com/janar153/dbml-extension) · [Report an issue](https://github.com/janar153/dbml-extension/issues)
 
+## 2.0.1
+
+- Updated GitHub release automation to use artifact actions that run on Node.js 24.
+- Updated the extension’s dependencies and build and test tooling.
+- Embedded the demo GIF and screenshots in the GitHub and VS Code READMEs.
+
 ## 2.0.0
 
 - Added native DBML syntax highlighting, comment toggling, bracket and quote pairing, and editor snippets alongside the diagram. Adapted the MIT-licensed language assets from [vscode-dbml by Matthew Meyers](https://github.com/mattmeyers/vscode-dbml) for current DBML structure, visualization, lineage, architecture, and module syntax.

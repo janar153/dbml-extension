@@ -1,11 +1,19 @@
-import ts from 'typescript';
+import { transformSync } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 import { parseDbml } from '../../parser';
 import { typeormExporter } from './index';
 
 function syntaxErrors(content: string): string[] {
-  const out = ts.transpileModule(content, { reportDiagnostics: true, compilerOptions: { experimentalDecorators: true } });
-  return (out.diagnostics ?? []).map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'));
+  try {
+    transformSync(content, {
+      loader: 'ts',
+      tsconfigRaw: { compilerOptions: { experimentalDecorators: true } },
+    });
+    return [];
+  } catch (error) {
+    if (error instanceof Error) return [error.message];
+    throw error;
+  }
 }
 
 function exportDbml(src: string, options: Record<string, unknown> = {}) {

@@ -9,8 +9,8 @@ import { copyFileSync } from 'fs';
 // (see panel.ts), and emptyOutDir wipes the dir every build — so copy on closeBundle,
 // which fires in both `vite build` and `vite build --watch`.
 function copyCodicons(): Plugin {
-  const src = resolve(__dirname, 'node_modules/@vscode/codicons/dist');
-  const out = resolve(__dirname, 'dist/webview');
+  const src = resolve(import.meta.dirname, 'node_modules/@vscode/codicons/dist');
+  const out = resolve(import.meta.dirname, 'dist/webview');
   return {
     name: 'copy-codicons',
     closeBundle() {
@@ -21,7 +21,7 @@ function copyCodicons(): Plugin {
 }
 
 export default defineConfig({
-  root: resolve(__dirname, 'src/webview'),
+  root: resolve(import.meta.dirname, 'src/webview'),
   plugins: [tailwindcss(), copyCodicons()],
   resolve: {
     alias: {
@@ -31,20 +31,20 @@ export default defineConfig({
       'react/jsx-runtime': 'preact/jsx-runtime',
     },
   },
-  esbuild: {
+  oxc: {
     jsx: 'automatic',
     jsxImportSource: 'preact',
   },
   build: {
-    outDir: resolve(__dirname, 'dist/webview'),
+    outDir: resolve(import.meta.dirname, 'dist/webview'),
     emptyOutDir: true,
-    rollupOptions: {
-      input: resolve(__dirname, 'src/webview/main.tsx'),
+    rolldownOptions: {
+      input: resolve(import.meta.dirname, 'src/webview/main.tsx'),
       output: {
         entryFileNames: 'webview.js',
         assetFileNames: 'webview[extname]',
         format: 'iife',
-        inlineDynamicImports: true,
+        codeSplitting: false,
       },
     },
     sourcemap: false,
@@ -53,8 +53,8 @@ export default defineConfig({
   },
   test: {
     // Tests live across src/{webview,extension,shared}; webview-only root would skip extension specs.
-    dir: resolve(__dirname, 'src'),
+    dir: resolve(import.meta.dirname, 'src'),
     include: ['**/*.test.ts'],
-    setupFiles: [resolve(__dirname, 'src/extension/testing/parseSetup.ts')],
+    setupFiles: [resolve(import.meta.dirname, 'src/extension/testing/parseSetup.ts')],
   },
 });

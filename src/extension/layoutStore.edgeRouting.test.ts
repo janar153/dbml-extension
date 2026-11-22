@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { emptyLayout, mergeLayout, parseLayout, serializeLayout, serializeSharedLayout } from './layoutStore';
 import { mergeThreeWay } from './mergeThreeWay';
 import { applyDecisions } from './mergeResolver';
 import { applyViewState, emptyViewState } from './viewStateStore';
 import { EDGE_ROUTING_VERSION, type Layout } from '../shared/types';
+
+vi.mock('vscode', () => import('./testing/vscodeFake'));
 
 const REF = 'public.a::fk|public.b::id';
 

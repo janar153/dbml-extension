@@ -10,9 +10,15 @@ Interactive diagram for `.dbml` files, rendered beside the editor. The **source 
 
 ## DBML in action
 
-![In VS Code, open the bookshop diagram beside the syntax-highlighted DBML and drag a table to see its relationship lines follow.](https://raw.githubusercontent.com/janar153/dbml-extension/extension-media/docs/media/dbml-in-action.gif)
+![Dragging a table in the bookshop diagram while its relationship lines follow.](docs/media/dbml-in-action.gif)
 
-[Syntax highlighting screenshot](https://raw.githubusercontent.com/janar153/dbml-extension/extension-media/docs/media/dbml-language-support.png) · [Side-by-side diagram screenshot](https://raw.githubusercontent.com/janar153/dbml-extension/extension-media/docs/media/dbml-diagram-preview.png)
+### Side-by-side diagram
+
+![The bookshop diagram open beside its DBML source in VS Code.](docs/media/dbml-diagram-preview.png)
+
+### DBML syntax highlighting
+
+![A DBML file with syntax-highlighted tables, columns, and references in VS Code.](docs/media/dbml-language-support.png)
 
 Built for:
 
@@ -199,3 +205,8 @@ failing.
 Updates to `main` repeat those checks and publish a GitHub release with the
 validated VSIX for a new version in `package.json`. Bump that version for each
 release. Existing releases stay available on GitHub.
+
+Whenever you set or change the extension version in `package.json`, run
+`pnpm run package` and verify the resulting
+`packages/dbml-extension-<version>.vsix` with `unzip -t` before opening or
+updating the release PR.

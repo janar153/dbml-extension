@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseLayout, serializeSharedLayout, emptyLayout } from '../../extension/layoutStore';
 import { parseDbml } from '../../extension/parser';
 import { buildExportModel, renderSvg, type ThemeTokens } from '../export/imageExport';
 import { buildArchitectureScene, architectureSelection } from './architectureLayout';
 import { diagramAnnotations } from './diagramLabels';
+
+vi.mock('vscode', () => import('../../extension/testing/vscodeFake'));
 
 const source = `---
 diagram_type: architecture

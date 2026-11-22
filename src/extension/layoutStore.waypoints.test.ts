@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { parseLayout, serializeLayout } from './layoutStore';
 import type { Layout } from '../shared/types';
+
+vi.mock('vscode', () => import('./testing/vscodeFake'));
 
 const baseLayout = (overrides?: Partial<Layout>): Layout => ({
   version: 1,

@@ -21,9 +21,14 @@ readable and preserve the upstream credit and MIT notice when changing metadata.
    access stay host-side. Preserve granular Zustand subscriptions, viewport
    culling and LOD, the shared SVG edge layer, and atomic sidecar writes.
 4. Verify with `pnpm typecheck` and relevant Vitest cases. For host or browser
-   behavior, use the repository's `run-dbml-extension` skill. For release
-   metadata or build changes, run `pnpm run package` and inspect the VSIX in
-   `packages/`. The package command retains five recent release archives.
+   behavior, use the repository's `run-dbml-extension` skill.
+5. A fresh local VSIX is mandatory after every change to this repository,
+   including version bumps and documentation changes. After the final edit, run
+   `pnpm run package` locally and verify
+   `packages/dbml-extension-<version>.vsix` with `unzip -t`. Confirm the packaged
+   manifest version matches `package.json` and link the local archive in the
+   handoff so the user can install it. The package command retains five recent
+   release archives.
 
 Read [architecture.md](references/architecture.md) for the host/webview
 boundary and [spec-template.md](references/spec-template.md) for new specs.

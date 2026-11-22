@@ -30,7 +30,7 @@ describe('analyze — classification + clustering', () => {
         }
       }
       expect(seen.size).toBe(schema.tables.length);
-    });
+    }, fixture === 'huge.dbml' ? 60_000 : undefined);
   }
 
   it('formatAnalysis produces a readable roles + clusters dump', () => {

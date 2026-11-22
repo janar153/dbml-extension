@@ -17,6 +17,8 @@ DBML de 5000 tablas abierto en una laptop decente (Chromium webview, sin WebGL),
 
 ## Budgets numéricos (medir en M3 y regresar en M5, M6, M7)
 
+Ejecutar `pnpm test:perf` en una máquina sin carga para comprobar los límites absolutos de drag y A* en serie. `pnpm test` ejecuta los mismos casos y comprueba la corrección y la mejora relativa del drag frente al rebuild.
+
 | Métrica | Budget | Cómo medir |
 |---|---|---|
 | Parse DBML 5000 tablas | < 2000ms **en el worker** (medido 10.2: ~2.1 s caliente, ~3 s en frío) — excedido ~5–10 %, aceptado porque el host ya no se bloquea | `performance.now()` alrededor del `postMessage` → reply de `parseWorker.js` (spec 18) |

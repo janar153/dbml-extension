@@ -163,6 +163,8 @@ pnpm test             # vitest
 pnpm typecheck
 ```
 
+Run `pnpm test:perf` on an idle machine to check the absolute drag-frame and A* routing budgets against `huge.dbml`. The regular suite runs the same cases and checks correctness and relative drag speedups.
+
 Press `F5` to launch an Extension Development Host, open a `.dbml` there (e.g. `test/fixtures/huge.dbml`, 5000 tables) and run the command. `pnpm watch:extension` / `pnpm watch:webview` rebuild on change.
 
 - `src/extension/` — VS Code host: parsing, layout file I/O, git, exporters, panel lifecycle.

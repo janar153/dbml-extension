@@ -281,6 +281,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:gen": "mkdir -p test/fixtures && node scripts/gen-fixtures.mjs small > test/fixtures/small.dbml && node scripts/gen-fixtures.mjs huge > test/fixtures/huge.dbml && node scripts/gen-fixtures.mjs merge 3 && node scripts/gen-fixtures.mjs merge 20",
     "test": "vitest run",
+    "test:perf": "vitest run --mode performance --no-file-parallelism dragFrame.perf astar.perf",
     "test:watch": "vitest",
     "package": "node scripts/package-extension.mjs",
     "vscode:prepublish": "pnpm run build"

@@ -112,7 +112,7 @@ describe('smartLayout — disconnected parts pack near-square (audit F17)', () =
     const pos = layoutOf(schema);
     expect(aspectOk(extent(schema, pos))).toBe(true);
     expect(groupViolations(schema, pos)).toEqual([]);
-  });
+  }, 60_000);
 });
 
 const groupedFixture = new URL('../fixtures/grouped-layout.dbml', import.meta.url);

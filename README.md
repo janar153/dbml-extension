@@ -10,6 +10,22 @@ Interactive diagram for `.dbml` files, rendered beside the editor. The **source 
 
 ## DBML in action
 
+### Three diagram appearances
+
+The same Bookshop schema in the VS Code theme and both printer-friendly appearances.
+
+| VS Code theme | Printer-friendly light | Printer-friendly dark |
+| --- | --- | --- |
+| [![Bookshop diagram using VS Code colors and colored table headers.](docs/media/diagram-theme-vscode.png)](docs/media/diagram-theme-vscode.png) | [![Bookshop diagram on a white canvas with PK and FK labels.](docs/media/diagram-theme-print-light.png)](docs/media/diagram-theme-print-light.png) | [![Bookshop diagram on a dark canvas with PK and FK labels.](docs/media/diagram-theme-print-dark.png)](docs/media/diagram-theme-print-dark.png) |
+
+### Move a relationship endpoint
+
+Select a relationship and drag its endpoint handle to any side of the table. The line reroutes as you drag.
+
+![A relationship from authors to books reroutes as its endpoint moves from the left edge to the top of the books table.](docs/media/diagram-edge-endpoint.gif)
+
+### Move tables
+
 ![Dragging a table in the bookshop diagram while its relationship lines follow.](docs/media/dbml-in-action.gif)
 
 ### Side-by-side diagram
@@ -82,8 +98,8 @@ If you are switching from dddbml, copy any customized VS Code settings from `ddd
 
 **Export**
 - Schema → **TypeORM entities** (PostgreSQL dialect; more dialects pluggable). Export the whole schema or the selection.
-- Schema → **PostgreSQL SQL script**. Choose **PostgreSQL (SQL)** in **Export Schema** to save a `.sql` file containing the full schema, including keys, constraints, indexes, and enums.
-- Diagram → **PNG / SVG / clipboard**, whole diagram, current view or selection. Prefer SVG for very large diagrams.
+- **Export Schema** saves full-schema SQL for PostgreSQL, MySQL / MariaDB, Oracle, SQLite, and SQL Server. Use types, default expressions, and checks compatible with your target engine. SQLite stores named-schema tables in the same database, with names such as `billing.invoices`.
+- **Export ERD** saves PNG, SVG, or PDF, or copies an image to the clipboard. Choose the whole diagram, current view, or selection. Prefer SVG for very large diagrams.
 
 **Settings** — zoom step and limits, LOD threshold, UI density, snap-to-grid, layout spacing and export defaults, editable from the in-app Settings panel or VS Code settings (`dbml-extension.*`).
 
@@ -121,8 +137,8 @@ Keep the `.dbml` about **data** (tables, columns, refs, `records`, `Dep`) and le
 |---|---|
 | `DBML Extension: Open Diagram` | Open the diagram beside the active `.dbml`. |
 | `DBML Extension: Auto-arrange Diagram…` | Smart layout (all / new / selection) with edge ordering. |
-| `DBML Extension: Export Schema…` | Export TypeORM entities or a PostgreSQL SQL script. |
-| `DBML Extension: Export Image…` | PNG / SVG / clipboard export. |
+| `DBML Extension: Export Schema` | Export TypeORM entities or a full-schema SQL script. |
+| `DBML Extension: Export ERD` | PNG, SVG, PDF, or clipboard export. |
 | `DBML Extension: Reset Layout` | Drop saved positions and re-run auto-layout. |
 | `DBML Extension: Prune orphan layout entries` | Remove layout entries whose table or group no longer exists. |
 | `DBML Extension: Zoom In / Zoom Out / Reset View / Fit to Content` | Viewport commands, bound to the shortcuts above while the diagram is focused. |
@@ -146,7 +162,7 @@ Link: clients > api [proto: HTTPS, host: 'api.example.test']
 Link: api > db
 ```
 
-Edit nodes, links, groups, and notes in the DBML source. The canvas arranges them automatically and saves manual positions in the adjacent `.dbml.layout.json`. Drag a group to move its contents together. Use **Export Image** for SVG or PNG, including printer-friendly output.
+Edit nodes, links, groups, and notes in the DBML source. The canvas arranges them automatically and saves manual positions in the adjacent `.dbml.layout.json`. Drag a group to move its contents together. Use **Export ERD** for PNG, SVG, or PDF. SVG and PDF share the printer-friendly option. PDF places a raster rendering of the SVG on a single page at the selected resolution.
 
 For custom node icons, use an image filename beside the DBML file or an embedded image data URI. Remote icon URLs use the role's default symbol.
 

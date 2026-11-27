@@ -3,6 +3,7 @@ import type { parseDbml } from './parser';
 import type { DbmlProject } from './dbmlProject';
 import type { SchemaEditIntent, SchemaEditResult } from './schemaEdits';
 import type { TableDeclarationRange } from './tableLocation';
+import type { SqlDialect } from './exporters/sqlDialects';
 
 export type ParseResult = ReturnType<typeof parseDbml>;
 
@@ -12,7 +13,7 @@ export type ParseResult = ReturnType<typeof parseDbml>;
  */
 export interface ParseOps {
   parse: { request: { source: string; project?: DbmlProject }; result: ParseResult };
-  postgresSql: { request: { source: string }; result: { ok: true; sql: string } | { ok: false; message: string } };
+  sql: { request: { source: string; dialect: SqlDialect; project?: DbmlProject }; result: { ok: true; sql: string; warnings: string[] } | { ok: false; message: string } };
   /** 0-based `Table` declaration line. */
   locate: { request: { source: string; table: QualifiedName }; result: number | null };
   /** 0-based position of a column's name. */
@@ -55,7 +56,7 @@ function crashReply(job: Job, message: string): ParseReply {
   const id = job.id;
   switch (job.request.op) {
     case 'parse': return { id, op: 'parse', value: { schema: null, error: { message } } };
-    case 'postgresSql': return { id, op: 'postgresSql', value: { ok: false, message } };
+    case 'sql': return { id, op: 'sql', value: { ok: false, message } };
     case 'locate': return { id, op: 'locate', value: null };
     case 'locateColumn': return { id, op: 'locateColumn', value: null };
     case 'tableLinks': return { id, op: 'tableLinks', value: [] };

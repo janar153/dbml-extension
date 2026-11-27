@@ -49,6 +49,7 @@ export interface ExportInput {
   selection: ReadonlyArray<QualifiedName>;
   options: Record<string, unknown>;
   dbmlSource?: string;
+  dbmlProject?: { entry: string; root: string };
   channel?: string;
 }
 

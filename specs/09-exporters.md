@@ -4,7 +4,23 @@
 
 Convertir el modelo interno `Schema` a otros formatos de salida (TypeORM entities, Prisma schema, SQL DDL, Mermaid, etc.) desde el diagrama, con **una arquitectura registry+strategy** que permita agregar formatos nuevos sin tocar código existente.
 
-En v1.1 se entrega un único exporter productivo: **TypeORM (TypeScript entities)**. La infraestructura está diseñada para que agregar Prisma sea crear un módulo + 1 línea de registro.
+**Export Schema** ofrece entidades TypeORM y scripts SQL para PostgreSQL, MySQL / MariaDB, Oracle, SQLite y SQL Server.
+
+## Exportación SQL
+
+- Cada formato SQL guarda un archivo `.sql` con el esquema completo. La generación corre
+  en el worker y usa la resolución de módulos DBML del proyecto local de confianza.
+- PostgreSQL, MySQL / MariaDB, Oracle y SQL Server usan el exportador de `@dbml/core`.
+  Se excluyen los registros de ejemplo y las referencias inactivas, y se agrega unicidad al
+  lado de clave foránea de una relación uno a uno cuando hace falta.
+- SQLite declara las claves foráneas dentro de `CREATE TABLE`, convierte los tipos a
+  afinidades y representa los enums con `CHECK`. Los esquemas con nombre se almacenan
+  en el mismo archivo con nombres de tabla como `"billing.invoices"`. Las relaciones
+  muchos a muchos generan tablas intermedias. `[increment]` requiere una clave primaria
+  entera de una sola columna.
+- Los tipos y expresiones SQL específicos del motor se deben revisar para el dialecto elegido.
+  Oracle avisa sobre acciones referenciales no representables y permisos para claves foráneas
+  entre esquemas. SQL Server avisa sobre índices que requieren columnas calculadas.
 
 ## Goals
 

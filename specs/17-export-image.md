@@ -2,7 +2,7 @@
 
 ## Propósito
 
-Permitir exportar el diagrama como **imagen** (PNG / SVG / portapapeles) desde el
+Permitir exportar el diagrama como PNG, SVG, PDF o imagen al portapapeles desde el
 menú de la aplicación, eligiendo el alcance: **todo el diagrama**, **solo la vista
 actual** (lo que se ve en pantalla) o **la selección actual**. Pensado para
 documentar y compartir el esquema fuera de VS Code.
@@ -17,7 +17,10 @@ export del diagrama completo — las tablas fuera de pantalla no existen en el D
 
 La solución es **generar un documento SVG a partir del modelo del store** (tablas,
 columnas, grupos, edges), no del DOM. El SVG se rasteriza a PNG en un `<canvas>`
-dentro del webview. **Cero dependencias nuevas** (presupuesto de bundle, spec 07).
+dentro del webview. PDF rasteriza exactamente el mismo SVG que se guardaría con
+el botón SVG, con el mismo alcance, fondo y opción de impresión. El host incrusta
+el PNG sin pérdida en una página PDF con las proporciones del SVG mediante
+`pdf-lib`. La escala cambia la resolución de la imagen, no el tamaño de la página.
 
 ## Preguntas abiertas (Open Questions)
 
@@ -107,22 +110,22 @@ Los edges se dibujan a opacidad completa (sin el fade de hover del canvas).
 
 ## Puntos de extensión / integración
 
-- UI: `ui/{Modal,Button,RadioGroup,Field}` (modal `render/exportImageModal.tsx`,
-  modelo: `render/exportModal.tsx`). Ítem "Export image…" en `render/appMenu.tsx`.
+- UI: modal `render/exportImageModal.tsx` e ítem "Export ERD" en `render/appMenu.tsx`.
 - Montaje: `<ExportImageModal derived={derived} />` en `app.tsx`.
-- Comando `dddbml.exportImage` (`package.json` + `extension.ts`), espejo de
-  `dddbml.exportSchema` → abre el modal vía `exportImage:prompt`.
+- Comando `dbml-extension.exportImage` (`package.json` + `extension.ts`) → abre el
+  modal vía `exportImage:prompt`.
 
 ## Protocolo host↔webview
 
-- `WebviewToHost`: `{ type: 'command:saveImage'; payload: { dataBase64; mime:
-  'image/png' | 'image/svg+xml'; suggestedName; reducedScale? } }` (`reducedScale` sólo si el
-  PNG se recortó por `fitScale`).
+- `WebviewToHost`: `command:saveImage` lleva `suggestedName` y el tipo MIME.
+  PNG y SVG envían `dataBase64`. PDF envía `pngBase64`, `width` y `height` del SVG.
+  PNG y PDF incluyen `reducedScale` cuando `fitScale` reduce la resolución.
 - `HostToWebview`: `{ type: 'exportImage:prompt' }` (abre el modal desde la paleta) y
   `{ type: 'image:result'; payload: { ok; path?; message? } }`.
 - Host (`panel.ts` `saveImage`): `vscode.window.showSaveDialog` (defaultUri junto al
-  `.dbml`, filtro PNG/SVG) → `workspace.fs.writeFile(Buffer.from(base64,'base64'))` →
-  `image:result`. Cancelar el diálogo = `ok:false` sin error (el modal queda abierto).
+  `.dbml`, filtro PNG/SVG/PDF) → conversión de PNG a PDF en `diagramPdf.ts` si
+  corresponde → `workspace.fs.writeFile` → `image:result`. Cancelar el diálogo =
+  `ok:false` sin error (el modal queda abierto).
 - **Copiar**: en el webview vía `navigator.clipboard.write([ClipboardItem])`; si falla
   (no soportado/bloqueado) cae al guardado por host.
 
@@ -170,7 +173,7 @@ por frame. No se añaden dependencias al bundle (solo código propio).
   edges por extremos, y `renderSvg` sin `var(` con markers crow's-foot presentes.
 - `src/webview/export/raster.test.ts`: lógica pura de `fitScale` (sin clamp / clamp por
   dimensión / clamp por área / tamaños degenerados).
-- Manual (Extension Development Host): menú → "Export image…"; con la mayoría de tablas
+- Manual (Extension Development Host): menú → "Export ERD"; con la mayoría de tablas
   fuera de pantalla, "Todo" produce un archivo con **todas** las tablas (prueba que es
   por modelo, no por DOM culled); "Vista actual" recorta a lo visible; "Selección" solo
   las seleccionadas; PNG a 1×/2×/3×; Background off → PNG transparente; el SVG abre en

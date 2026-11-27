@@ -70,6 +70,7 @@ Panel flotante top-right dentro del viewport (título **"Diagram Views"**), cola
   `Tooltip` (ver spec 12). Sin groups, el botón es "Show all" y des-oculta todas las tablas.
 - **View options**: toggles de vista globales. Hoy: **PK/FK columns only** (`showOnlyPkFk`). Es una
   opción de *vista* (no de grupo), por eso vive aquí y no en la barra de acciones.
+  El filtro funciona con el tema de VS Code y con ambas apariencias de impresión del lienzo.
 - **Search**: input con ícono; filtra groups y tablas por nombre. Expone `inputRef` para enfoque
   imperativo.
 - **Lista**: groups en orden alfabético, cada fila con swatch de color, nombre + count, y botones

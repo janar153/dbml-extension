@@ -16,6 +16,7 @@ import type { GitOp } from '../shared/types';
 import { getExporter, listExporters } from './exporters';
 import { applySettingsPatch, loadSettings, onSettingsChange } from './settings';
 import { SchemaEditor } from './schemaEditor';
+import { diagramPdf } from './diagramPdf';
 
 const PERSIST_DEBOUNCE_MS = 200;
 /** Editor autosave fires the .dbml watcher on a timer while typing; coalesce bursts. */
@@ -31,6 +32,12 @@ type ReadOnlyReason = 'merge' | 'timeTravel' | 'diff';
 
 type TimeTravelPayload = Extract<HostToWebview, { type: 'git:timeTravel:enter' }>['payload'];
 type DiffPayload = Extract<HostToWebview, { type: 'git:diff:enter' }>['payload'];
+type SaveImagePayload = Extract<WebviewToHost, { type: 'command:saveImage' }>['payload'];
+const IMAGE_SAVE_FILTERS = {
+  'image/png': { 'PNG image': ['png'] },
+  'image/svg+xml': { 'SVG image': ['svg'] },
+  'application/pdf': { 'PDF document': ['pdf'] },
+};
 
 /** The git overlay on screen; time travel keeps its payload so a reloaded webview gets it back. */
 type GitOverlay = { kind: 'timeTravel'; enter: TimeTravelPayload; dbmlSource: string } | { kind: 'diff' };
@@ -483,6 +490,7 @@ export class DiagramPanel {
         selection: payload.selection,
         options: payload.options,
         dbmlSource: revision?.dbmlSource ?? this.lastValidDbmlSource,
+        dbmlProject: revision ? undefined : this.dbmlProject(),
         channel: `export:${this.dbmlUri.toString()}`,
       });
 
@@ -521,32 +529,34 @@ export class DiagramPanel {
   }
 
   /**
-   * Save an image the webview rendered (PNG/SVG bytes, base64). Prompts for a location with a
+   * Save an exported diagram as PNG, SVG, or PDF. Prompts for a location with a
    * save dialog (defaulting beside the .dbml), writes the bytes, and reports back so the webview
    * can close the dialog. Cancelling the dialog is a no-op (ok:false, no error).
    */
-  private async saveImage(payload: { dataBase64: string; mime: 'image/png' | 'image/svg+xml'; suggestedName: string; reducedScale?: number }): Promise<void> {
-    const ext = payload.mime === 'image/svg+xml' ? 'svg' : 'png';
+  private async saveImage(payload: SaveImagePayload): Promise<void> {
+    const pdf = payload.mime === 'application/pdf';
     const defaultUri = vscode.Uri.joinPath(this.dbmlUri, '..', payload.suggestedName);
     try {
       const target = await vscode.window.showSaveDialog({
         defaultUri,
-        filters: ext === 'svg' ? { 'SVG image': ['svg'] } : { 'PNG image': ['png'] },
+        filters: IMAGE_SAVE_FILTERS[payload.mime],
       });
       if (!target) {
         this.post({ type: 'image:result', payload: { ok: false } });
         return;
       }
-      const bytes = Buffer.from(payload.dataBase64, 'base64');
+      const bytes = pdf
+        ? await diagramPdf(Buffer.from(payload.pngBase64, 'base64'), payload.width, payload.height)
+        : Buffer.from(payload.dataBase64, 'base64');
       await vscode.workspace.fs.writeFile(target, bytes);
       this.post({ type: 'image:result', payload: { ok: true, path: target.fsPath } });
       const reduced = payload.reducedScale !== undefined
         ? ` at ${payload.reducedScale}× (reduced: too large for the requested scale; use SVG for full resolution)`
         : '';
-      void vscode.window.showInformationMessage(`DBML Extension: image saved${reduced} — ${this.shortName(target)}.`);
+      void vscode.window.showInformationMessage(`DBML Extension: ${pdf ? 'PDF' : 'image'} saved${reduced} — ${this.shortName(target)}.`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      void vscode.window.showErrorMessage(`DBML Extension: image export failed — ${message}`);
+      void vscode.window.showErrorMessage(`DBML Extension: ${pdf ? 'PDF' : 'image'} export failed — ${message}`);
       this.post({ type: 'image:result', payload: { ok: false, message } });
     }
   }
@@ -615,6 +625,12 @@ export class DiagramPanel {
     return send;
   }
 
+  private dbmlProject() {
+    if (this.dbmlUri.scheme !== 'file' || !vscode.workspace.isTrusted) return undefined;
+    const entry = this.dbmlUri.fsPath;
+    return { entry, root: vscode.workspace.getWorkspaceFolder(this.dbmlUri)?.uri.fsPath ?? dirname(entry) };
+  }
+
   private async parseAndPostSchema(opts: SchemaSendOptions, sendId: number): Promise<void> {
     const postsBefore = this.schemaPosts;
     let payload: { schema: Schema; parseError: ParseError | null };
@@ -622,16 +638,9 @@ export class DiagramPanel {
       const bytes = await vscode.workspace.fs.readFile(this.dbmlUri);
       const source = new TextDecoder('utf-8').decode(bytes);
       const channel = `live:${this.dbmlUri.toString()}`;
-      const entry = this.dbmlUri.scheme === 'file' && vscode.workspace.isTrusted ? this.dbmlUri.fsPath : undefined;
-      const result = entry
-        ? (await parseRequest({
-          op: 'parse',
-          source,
-          project: {
-            entry,
-            root: vscode.workspace.getWorkspaceFolder(this.dbmlUri)?.uri.fsPath ?? dirname(entry),
-          },
-        }, channel)) ?? null
+      const project = this.dbmlProject();
+      const result = project
+        ? (await parseRequest({ op: 'parse', source, project }, channel)) ?? null
         : await parseAsync(source, channel);
       const hydrated = result?.schema && diagramImageFiles(result.schema).length
         ? await loadDiagramImages(this.dbmlUri, result.schema)

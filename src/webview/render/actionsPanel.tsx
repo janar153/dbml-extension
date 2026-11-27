@@ -92,7 +92,7 @@ function ActionsPanelImpl() {
           </Button>
         </Tooltip>
         <span class="ddd-actions-bar__divider" aria-hidden="true" />
-        <Tooltip label={architecture ? 'Export image…' : 'Export…'}>
+        <Tooltip label={architecture ? 'Export ERD' : 'Export Schema'}>
           <Button variant="subtle" size="tool" onClick={() => {
             const state = store.getState();
             if (architecture) state.setExportImagePromptOpen(true);

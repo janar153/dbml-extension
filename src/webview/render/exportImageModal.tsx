@@ -20,8 +20,7 @@ type ScaleKey = '1x' | '2x' | '3x';
 const SCALE: Record<ScaleKey, number> = { '1x': 1, '2x': 2, '3x': 3 };
 
 /**
- * Excalidraw-style "Export image" dialog. Builds a standalone SVG from the store model
- * (not the culled DOM — see imageExport.ts), then exports it as SVG, PNG, or clipboard.
+ * Builds a standalone SVG from the store model, then exports it as SVG, PDF, PNG, or clipboard.
  * Scope: whole diagram / current viewport / current selection. See specs/17-export-image.md.
  */
 export function ExportImageModal({ schema, viewName, derived }: ExportImageModalProps) {
@@ -82,7 +81,7 @@ export function ExportImageModal({ schema, viewName, derived }: ExportImageModal
 
   const safeName = () => (filename.trim() || 'diagram').replace(/[\\/:*?"<>|]+/g, '_');
 
-  const exportAs = async (kind: 'png' | 'svg' | 'copy') => {
+  const exportAs = async (kind: 'png' | 'svg' | 'pdf' | 'copy') => {
     if (busy) return;
     setNote(null);
     // Busy first, then a frame, so the disabled state paints before the synchronous SVG build
@@ -91,7 +90,8 @@ export function ExportImageModal({ schema, viewName, derived }: ExportImageModal
     await new Promise<void>((r) => requestAnimationFrame(() => r()));
     try {
       const built = buildImageSvg(gatherSource(), {
-        scope, background, filename: safeName(), viewRect: viewRect(), printerFriendly: kind === 'svg' && printerFriendly,
+        scope, background, filename: safeName(), viewRect: viewRect(),
+        printerFriendly: (kind === 'svg' || kind === 'pdf') && printerFriendly,
         includeProjectTitle: scope !== 'selection' && store.getState().showProjectTitle,
         includeProjectNote: scope === 'view' ? store.getState().showProjectNote : includeProjectNote,
       });
@@ -107,6 +107,20 @@ export function ExportImageModal({ schema, viewName, derived }: ExportImageModal
       const { blob, clamped, scale: effective } = await svgToPng(built.svg, built.width, built.height, SCALE[scale]);
       const reducedScale = Number(effective.toFixed(2));
       if (clamped) setNote('Diagram too large at this scale — exported at a reduced scale. Use SVG for full resolution.');
+      if (kind === 'pdf') {
+        postToHost({
+          type: 'command:saveImage',
+          payload: {
+            mime: 'application/pdf',
+            pngBase64: await blobToBase64(blob),
+            suggestedName: `${safeName()}.pdf`,
+            width: built.width,
+            height: built.height,
+            ...(clamped ? { reducedScale } : {}),
+          },
+        });
+        return;
+      }
       if (kind === 'copy') {
         try {
           await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
@@ -138,11 +152,12 @@ export function ExportImageModal({ schema, viewName, derived }: ExportImageModal
     <Modal
       open={open}
       onClose={close}
-      title="Export image"
+      title="Export ERD"
       footer={
         <>
           <Button variant="primary" disabled={busy} onClick={() => void exportAs('png')}>PNG</Button>
           <Button variant="secondary" disabled={busy} onClick={() => void exportAs('svg')}>SVG</Button>
+          <Button variant="secondary" disabled={busy} onClick={() => void exportAs('pdf')}>PDF</Button>
           <Button variant="secondary" disabled={busy} onClick={() => void exportAs('copy')}>Copy to clipboard</Button>
         </>
       }
@@ -156,20 +171,20 @@ export function ExportImageModal({ schema, viewName, derived }: ExportImageModal
       />
       <RadioGroup<ScaleKey>
         label="Scale"
-        hint="Raster multiplier for PNG / clipboard (SVG is vector)."
+        hint="Raster resolution for PNG, PDF, and clipboard."
         value={scale}
         options={[{ value: '1x', label: '1×' }, { value: '2x', label: '2×' }, { value: '3x', label: '3×' }]}
         onChange={setScale}
       />
       <Checkbox
         label="Background"
-        hint="Include a solid background; off exports a transparent PNG."
+        hint="Include a solid background."
         value={background}
         onCommit={setBackground}
       />
       <Checkbox
         label="Printer friendly"
-        hint="SVG only. Uses a white page, full labels, and a PK/FK column."
+        hint="For SVG and PDF. Uses a white page, full labels, and a PK/FK column."
         value={printerFriendly}
         onCommit={setPrinterFriendly}
       />

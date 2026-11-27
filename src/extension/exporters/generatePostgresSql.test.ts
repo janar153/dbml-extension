@@ -1,5 +1,7 @@
 import { expect, it } from 'vitest';
-import { generatePostgresSql } from './generatePostgresSql';
+import { generateSql } from './generateSql';
+
+const generatePostgresSql = (source: string) => generateSql(source, 'postgres').sql;
 
 it('exports schema objects before composite and cyclic foreign keys', () => {
   const sql = generatePostgresSql(`

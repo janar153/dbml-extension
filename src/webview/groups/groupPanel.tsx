@@ -44,8 +44,7 @@ function GroupPanelImpl() {
   const hiddenTables = useAppStore((s) => s.hiddenTables);
   const open = useAppStore((s) => s.viewsPanelOpen);
   const focusNonce = useAppStore((s) => s.viewsSearchFocusNonce);
-  const printing = useAppStore((s) => s.settings.ui.diagramAppearance !== 'theme');
-  const showOnlyPkFk = useAppStore((s) => s.showOnlyPkFk) && !printing;
+  const showOnlyPkFk = useAppStore((s) => s.showOnlyPkFk);
   // Hide/collapse/colour are layout edits: during a merge or git overlay they would be reverted on
   // Apply or never saved, so they are locked like the canvas.
   const readOnly = useAppStore(isCanvasReadOnly);
@@ -140,9 +139,8 @@ function GroupPanelImpl() {
           variant="action"
           size="sm"
           active={showOnlyPkFk}
-          disabled={printing}
           onClick={() => store.getState().toggleShowOnlyPkFk()}
-          title={printing ? 'Print layouts show all fields' : 'Show only primary-key and foreign-key columns'}
+          title="Show only primary-key and foreign-key columns"
         >
           <IconFilter size={12} />
           <span>PK/FK columns only</span>

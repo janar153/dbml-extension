@@ -115,7 +115,7 @@ export function App(_props: AppProps) {
   const focusDimming = useAppStore((s) => s.focusDimming);
   const appearance = useAppStore((s) => s.settings.ui.diagramAppearance);
   const editingPrintLayout = appearance !== 'theme';
-  const showOnlyPkFk = useAppStore((s) => s.settings.ui.diagramAppearance === 'theme' && s.showOnlyPkFk);
+  const showOnlyPkFk = useAppStore((s) => s.showOnlyPkFk);
   const showDeps = useAppStore((s) => s.showDeps);
   const diffActive = gitView?.kind === 'diff';
   // `viewport` itself is deliberately NOT selected here: it changes on every pan/zoom frame and

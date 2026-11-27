@@ -1,9 +1,9 @@
 import { registerExporter } from './registry';
 import { typeormExporter } from './typeorm';
-import { postgresSqlExporter } from './postgresSql';
+import { sqlExporters } from './sql';
 
 registerExporter(typeormExporter);
-registerExporter(postgresSqlExporter);
+sqlExporters.forEach(registerExporter);
 // Future exporters: add a single registerExporter(...) line. See specs/09-exporters.md.
 
 export { getExporter, listExporters } from './registry';

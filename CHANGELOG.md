@@ -2,6 +2,15 @@
 
 [GitHub repository](https://github.com/janar153/dbml-extension) · [Report an issue](https://github.com/janar153/dbml-extension/issues)
 
+## 2.0.2
+
+- Renamed the diagram’s schema export action to **Export Schema**.
+- Added full-schema SQL downloads for MySQL / MariaDB, Oracle, SQLite, and SQL Server alongside PostgreSQL.
+
+- Renamed **Export image** to **Export ERD** and added single-page PDF export using the SVG export settings.
+- Enabled **PK/FK columns only** in both printer-friendly diagram themes.
+- Updated DBML core to 13.0.0 and refreshed the layout and development tooling dependencies.
+
 ## 2.0.1
 
 - Updated GitHub release automation to use artifact actions that run on Node.js 24.

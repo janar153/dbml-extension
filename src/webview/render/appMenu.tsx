@@ -112,7 +112,7 @@ function AppMenuImpl() {
                 onClick={pick(() => store.getState().setExportPromptOpen(true))}
               >
                 <IconExport size={14} />
-                <span class="ddd-app-menu__label">Export…</span>
+                <span class="ddd-app-menu__label">Export Schema</span>
               </button> : null}
               <button
                 class="ddd-app-menu__item"
@@ -120,7 +120,7 @@ function AppMenuImpl() {
                 onClick={pick(() => store.getState().setExportImagePromptOpen(true))}
               >
                 <IconImage size={14} />
-                <span class="ddd-app-menu__label">Export image…</span>
+                <span class="ddd-app-menu__label">Export ERD</span>
               </button>
               <hr class="ddd-app-menu__separator" />
               <button

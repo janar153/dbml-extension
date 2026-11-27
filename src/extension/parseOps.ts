@@ -1,6 +1,6 @@
 import type { ParseJob, ParseReply } from './parseClient';
 import { parseDbml } from './parser';
-import { generatePostgresSql } from './exporters/generatePostgresSql';
+import { generateSql } from './exporters/generateSql';
 import { computeSchemaEdit } from './schemaEdits';
 import { findColumnLocation, findTableLine, findTableDeclarationRanges } from './tableLocation';
 
@@ -9,11 +9,11 @@ export function runParseJob(job: ParseJob): ParseReply {
   const id = job.id;
   switch (job.op) {
     case 'parse': return { id, op: 'parse', value: parseDbml(job.source, job.project) };
-    case 'postgresSql': {
+    case 'sql': {
       try {
-        return { id, op: 'postgresSql', value: { ok: true, sql: generatePostgresSql(job.source) } };
+        return { id, op: 'sql', value: { ok: true, ...generateSql(job.source, job.dialect, job.project) } };
       } catch (err) {
-        return { id, op: 'postgresSql', value: { ok: false, message: err instanceof Error ? err.message : String(err) } };
+        return { id, op: 'sql', value: { ok: false, message: err instanceof Error ? err.message : String(err) } };
       }
     }
     case 'locate': return { id, op: 'locate', value: findTableLine(job.source, job.table) };

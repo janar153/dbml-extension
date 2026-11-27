@@ -45,7 +45,7 @@ function TableNodeImpl({ table, x, y, lod, selected, color, fkColumns, foreignKe
   useAppStore((s) => s.settings.ui.density);
   const printing = useAppStore((s) => s.settings.ui.diagramAppearance !== 'theme');
   const showKeyColumn = useAppStore((s) => s.settings.ui.showKeyColumn) || printing;
-  const showOnlyPkFk = useAppStore((s) => s.showOnlyPkFk) && !printing;
+  const showOnlyPkFk = useAppStore((s) => s.showOnlyPkFk);
   const rowOpts = { showOnlyPkFk, fkColumns, diffStatus, diffBase, columnDiff };
   /** `column` set = opened on a column row (spec 19: field actions first). */
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; column?: string } | null>(null);
@@ -105,7 +105,7 @@ function TableNodeImpl({ table, x, y, lod, selected, color, fkColumns, foreignKe
   ctxItems.push(
     { label: 'Add field', disabled: readOnly, onClick: () => post({ type: 'schema:addField', payload: { table: table.name } }) },
     { label: '', onClick: () => {}, separator: true },
-    { label: 'Export…', onClick: () => store.getState().setExportPromptOpen(true) },
+    { label: 'Export Schema', onClick: () => store.getState().setExportPromptOpen(true) },
     { label: '', onClick: () => {}, separator: true },
     { label: 'Copy table name', onClick: () => { void navigator.clipboard.writeText(table.tableName); } },
   );
